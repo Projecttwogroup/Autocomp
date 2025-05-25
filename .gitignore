@@ -1,0 +1,20 @@
+# Ignore .NET build folders
+**/bin/
+**/obj/
+
+# Ignore backend uploads folder
+wwwroot/attachments/
+
+# Ignore environment files
+*.env
+
+# Ignore system/editor files
+.DS_Store
+.vscode/
+*.user
+*.suo
+
+# Ignore lockb files used by bun
+*.lockb
+
+.vs/
