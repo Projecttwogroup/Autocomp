@@ -1,7 +1,6 @@
 ﻿using AutoComp.Data;
 using AutoComp.DTOs;
 using AutoComp.Models;
-using AutoComp.Models.Requests;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -40,7 +39,7 @@ namespace AutoComp.Controllers
         }
 
         [HttpPost("{userId}")]
-        public async Task<IActionResult> CreateNotification(string userId, [FromBody] NotificationRequest request)
+        public async Task<IActionResult> CreateNotification(string userId, [FromBody] NotificationRequestDto request)
         {
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
@@ -53,7 +52,6 @@ namespace AutoComp.Controllers
                 Message = request.Message,
                 CreatedAt = DateTime.Now,
                 UserId = userId,
-                User = user
             };
 
             _context.Notifications.Add(notification);
@@ -67,6 +65,7 @@ namespace AutoComp.Controllers
                 notification.CreatedAt
             });
         }
+
 
         [HttpGet("{userId}/has-unseen")]
         public async Task<IActionResult> HasUnseen(string userId)
@@ -107,5 +106,29 @@ namespace AutoComp.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+        [HttpGet("admin/all")]
+        public async Task<IActionResult> GetAllNotifications()
+        {
+            var notifications = await _context.Notifications
+                .Include(n => n.User)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(5)
+                .Select(n => new NotificationResponseDto
+                {
+                    Id = n.Id,
+                    Title = n.Title,
+                    Message = n.Message,
+                    CreatedAt = n.CreatedAt,
+                    UserId = n.UserId,
+                    UserName = n.User.Name,
+                    IsSeen = n.IsSeen
+                })
+                .ToListAsync();
+
+            return Ok(notifications);
+        }
+
+
     }
 }

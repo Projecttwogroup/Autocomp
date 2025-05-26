@@ -13,5 +13,7 @@
         public string? UserId { get; set; }
 
         public bool IsSeen { get; set; }
+
+        public string? UserName { get; set; }
     }
 }

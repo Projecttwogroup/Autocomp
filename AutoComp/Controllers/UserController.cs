@@ -1,6 +1,7 @@
 ﻿using AutoComp.Data;
 using AutoComp.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace AutoComp.Controllers
 {
@@ -60,6 +61,35 @@ namespace AutoComp.Controllers
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
             return NoContent();
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> Search(string query)
+        {
+            Console.WriteLine($"[SEARCH API] Incoming query: '{query}'");
+
+            query = query.ToLower().Trim();
+
+            var matchedUsers = await _context.Users
+                .Where(u => u.Role.ToLower() != "admin" &&
+                    (u.Name.ToLower().Contains(query) || u.Email.ToLower().Contains(query)))
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Name,
+                    u.Email
+                })
+                .Take(10)
+                .ToListAsync();
+
+            Console.WriteLine($"[SEARCH API] Users matched: {matchedUsers.Count}");
+
+            foreach (var user in matchedUsers)
+            {
+                Console.WriteLine($"[SEARCH API] Match → {user.Name} ({user.Email})");
+            }
+
+            return Ok(matchedUsers);
         }
 
     }
