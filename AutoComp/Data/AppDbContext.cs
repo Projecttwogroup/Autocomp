@@ -13,6 +13,8 @@ namespace AutoComp.Data
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<ChatAttachment> ChatAttachments { get; set; }
         public DbSet<AiChatMessage> AiChatMessages { get; set; }
+        public DbSet<Technician> Technicians { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

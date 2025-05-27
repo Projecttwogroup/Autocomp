@@ -164,6 +164,7 @@ namespace AutoComp.Controllers
                 AvailableFrom = t.AvailableFrom,
                 AvailableUntil = t.AvailableUntil,
                 UserName = t.User?.Name,
+                UserId = t.User?.Id,
                 Status = t.Status,
                 Technician = t.Technician,
                 CreatedAt = t.CreatedAt,

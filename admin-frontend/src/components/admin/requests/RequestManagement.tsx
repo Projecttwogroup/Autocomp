@@ -27,111 +27,35 @@ import {
 import { Dialog } from "@/components/ui/dialog";
 import RequestDetailsDialog from "./RequestDetailsDialog";
 import ChangeStatusDialog from "./ChangeStatusDialog";
-import AssignTechnicianDialog from "./AssignTechnicianDialog";
 import DeleteRequestDialog from "./DeleteRequestDialog";
 import UserProfileDialog from "./UserProfileDialog";
 import TechnicianProfileDialog from "../technicians/TechnicianProfileDialog";
 import { toast } from "@/hooks/use-toast";
+import AssignTechnicianDialog from "@/components/AssignTechnicianDialog";
 
 // User interface
 interface User {
   id: string;
   name: string;
   email: string;
-  department: string;
-  role: string;
-  joinDate: string;
 }
 
 // Technician interface
 interface Technician {
   name: string;
   performance: number;
-  joinDate: string;
   completedRequests: number;
   averageTime: string;
-  specialty: string;
+  department: string;
 }
 
-// Mock users data
-const users: User[] = [
-  {
-    id: "USR-1001",
-    name: "John Smith",
-    email: "john.smith@example.com",
-    department: "Marketing",
-    role: "Manager",
-    joinDate: "2024-01-15",
-  },
-  {
-    id: "USR-1002",
-    name: "Emily Johnson",
-    email: "emily.johnson@example.com",
-    department: "Finance",
-    role: "Analyst",
-    joinDate: "2024-02-20",
-  },
-  {
-    id: "USR-1003",
-    name: "Michael Brown",
-    email: "michael.brown@example.com",
-    department: "IT",
-    role: "Developer",
-    joinDate: "2024-03-05",
-  },
-  {
-    id: "USR-1004",
-    name: "Sarah Williams",
-    email: "sarah.williams@example.com",
-    department: "Human Resources",
-    role: "Coordinator",
-    joinDate: "2024-01-30",
-  },
-  {
-    id: "USR-1005",
-    name: "David Lee",
-    email: "david.lee@example.com",
-    department: "Sales",
-    role: "Representative",
-    joinDate: "2024-02-10",
-  },
-];
+interface AssignTechnicianDialogProps {
+  request: Request;
+  technicians: Technician[];
+  onAssign: (technicianName: string) => void;
+  onCancel: () => void;
+}
 
-// Mock technicians data
-const technicians: Technician[] = [
-  {
-    name: "Jane Smith",
-    performance: 92,
-    joinDate: "2023-05-15",
-    completedRequests: 145,
-    averageTime: "1h 45m",
-    specialty: "Hardware Support",
-  },
-  {
-    name: "Robert Johnson",
-    performance: 88,
-    joinDate: "2023-07-22",
-    completedRequests: 122,
-    averageTime: "2h 10m",
-    specialty: "Software Support",
-  },
-  {
-    name: "Lisa Chen",
-    performance: 76,
-    joinDate: "2024-01-10",
-    completedRequests: 85,
-    averageTime: "3h 05m",
-    specialty: "Network Issues",
-  },
-  {
-    name: "Michael Brown",
-    performance: 70,
-    joinDate: "2024-02-18",
-    completedRequests: 62,
-    averageTime: "4h 30m",
-    specialty: "Hardware Support",
-  },
-];
 
 interface Request {
   id: string;
@@ -157,8 +81,21 @@ interface Request {
 
 const RequestManagement = () => {
   const [requests, setRequests] = useState<Request[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
 
   useEffect(() => {
+    const fetchTechnicians = async () => {
+      try {
+        const res = await fetch("https://localhost:7181/api/technician");
+        const data = await res.json();
+        setTechnicians(data);
+      } catch (err) {
+        console.error("Failed to fetch technicians", err);
+      }
+    };
+
+    fetchTechnicians();
+
     const fetchRequests = async () => {
       try {
         const response = await fetch(
@@ -308,19 +245,51 @@ const RequestManagement = () => {
     setIsAssignTechnicianOpen(false);
   };
 
-  const handleViewUserProfile = (userId: string) => {
-    const user = users.find((u) => u.id === userId);
-    if (user) {
+  const handleViewUserProfile = async (userId: string) => {
+    try {
+      const response = await fetch(`https://localhost:7181/api/user/${userId}`);
+      const userData = await response.json();
+
+      const userRequests = requests.filter((req) => req.userId === userId);
+
+      const user: User = {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+      };
+
       setCurrentUser(user);
       setIsUserProfileOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch user profile", error);
     }
   };
 
-  const handleViewTechnicianProfile = (technicianName: string) => {
-    const technician = technicians.find((t) => t.name === technicianName);
-    if (technician) {
+  const handleViewTechnicianProfile = async (technicianName: string) => {
+    try {
+      const response = await fetch(
+        `https://localhost:7181/api/technician/${technicianName}`
+      );
+      if (!response.ok) throw new Error("Technician not found");
+      const data = await response.json();
+
+      const technician: Technician = {
+        name: data.name,
+        department: data.department,
+        performance: data.performance,
+        completedRequests: data.completedRequests,
+        averageTime: data.averageResolutionTime,
+      };
+
       setCurrentTechnician(technician);
       setIsTechnicianProfileOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch technician profile", error);
+      toast({
+        title: "Error",
+        description: "Technician profile could not be loaded.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -539,6 +508,7 @@ const RequestManagement = () => {
         {currentRequest && (
           <AssignTechnicianDialog
             request={currentRequest}
+            technicians={technicians}
             onAssign={(technician) =>
               handleAssignTechnician(currentRequest.id, technician)
             }
@@ -548,8 +518,8 @@ const RequestManagement = () => {
       </Dialog>
 
       {/* User Profile Dialog */}
-      <Dialog open={isUserProfileOpen} onOpenChange={setIsUserProfileOpen}>
-        {currentUser && (
+      {currentUser && (
+        <Dialog open={isUserProfileOpen} onOpenChange={setIsUserProfileOpen}>
           <UserProfileDialog
             user={currentUser}
             userRequests={requests.filter(
@@ -557,8 +527,8 @@ const RequestManagement = () => {
             )}
             onClose={() => setIsUserProfileOpen(false)}
           />
-        )}
-      </Dialog>
+        </Dialog>
+      )}
 
       {/* Technician Profile Dialog */}
       <Dialog

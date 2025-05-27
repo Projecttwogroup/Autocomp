@@ -17,9 +17,6 @@ interface UserProfileDialogProps {
     id: string;
     name: string;
     email: string;
-    department: string;
-    role: string;
-    joinDate: string;
   };
   userRequests: {
     id: string;
@@ -30,6 +27,7 @@ interface UserProfileDialogProps {
   }[];
   onClose: () => void;
 }
+
 
 const UserProfileDialog: React.FC<UserProfileDialogProps> = ({
   user,
@@ -73,18 +71,6 @@ const UserProfileDialog: React.FC<UserProfileDialogProps> = ({
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-muted-foreground" />
               <span>{user.email}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Building className="h-4 w-4 text-muted-foreground" />
-              <span>{user.department}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
-              <span>{user.role}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>Joined: {user.joinDate}</span>
             </div>
           </div>
         </div>
