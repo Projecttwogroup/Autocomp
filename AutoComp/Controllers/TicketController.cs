@@ -185,15 +185,32 @@ namespace AutoComp.Controllers
             if (ticket == null)
                 return NotFound("Ticket not found.");
 
+            var previousStatus = ticket.Status;
+            var technicianName = ticket.Technician;
+
             ticket.Status = newStatus;
 
             if (newStatus == "Received")
                 ticket.Technician = null;
 
-            await _context.SaveChangesAsync();
+            // Sync CompletedRequests if technician is set
+            if (!string.IsNullOrEmpty(technicianName))
+            {
+                var technician = await _context.Technicians.FirstOrDefaultAsync(t => t.Name == technicianName);
+                if (technician != null)
+                {
+                    if (previousStatus == "Completed" && newStatus != "Completed")
+                        technician.CompletedRequests = Math.Max(0, technician.CompletedRequests - 1);
 
+                    if (previousStatus != "Completed" && newStatus == "Completed")
+                        technician.CompletedRequests += 1;
+                }
+            }
+
+            await _context.SaveChangesAsync();
             return Ok("Status updated.");
         }
+
 
 
 
@@ -211,7 +228,20 @@ namespace AutoComp.Controllers
             return Ok("Technician assigned.");
         }
 
+        [HttpPut("rate/{ticketId}")]
+        public async Task<IActionResult> RateTicket(string ticketId, [FromBody] RatingDto input)
+        {
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == ticketId);
+            if (ticket == null || ticket.Status != "Completed")
+                return BadRequest("Only completed tickets can be rated.");
 
+            ticket.Rating = input.Rating;
+            ticket.Feedback = input.Feedback;
+            ticket.CompletedAt ??= DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok("Rated successfully.");
+        }
 
     }
 }

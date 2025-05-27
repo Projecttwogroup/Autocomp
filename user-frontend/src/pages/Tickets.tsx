@@ -251,26 +251,48 @@ const Tickets = () => {
     setIsRatingDialogOpen(true);
   };
 
-  const submitRating = () => {
+  const submitRating = async () => {
     if (selectedTicket) {
-      // Update the rating for the selected ticket
-      const updatedTickets = tickets.map((ticket) =>
-        ticket.id === selectedTicket.id
-          ? {
-              ...ticket,
+      try {
+        await fetch(
+          `https://localhost:7181/api/ticket/rate/${selectedTicket.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
               rating,
               feedback,
-              completedOn: ticket.completedOn || new Date().toISOString(),
-            }
-          : ticket
-      );
+            }),
+          }
+        );
 
-      setTickets(updatedTickets);
+        const updatedTickets = tickets.map((ticket) =>
+          ticket.id === selectedTicket.id
+            ? {
+                ...ticket,
+                rating,
+                feedback,
+                completedOn: ticket.completedOn || new Date().toISOString(),
+              }
+            : ticket
+        );
 
-      toast({
-        title: "Thank You for Your Feedback",
-        description: "Your rating has been submitted successfully.",
-      });
+        setTickets(updatedTickets);
+
+        toast({
+          title: "Thank You for Your Feedback",
+          description: "Your rating has been submitted successfully.",
+        });
+      } catch (error) {
+        console.error("Failed to submit rating", error);
+        toast({
+          title: "Error",
+          description: "Could not save your rating. Please try again.",
+          variant: "destructive",
+        });
+      }
 
       setIsRatingDialogOpen(false);
     }

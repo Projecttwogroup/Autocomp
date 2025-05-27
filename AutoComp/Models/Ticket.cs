@@ -42,5 +42,12 @@ namespace AutoComp.Models
         public string Status { get; set; } = "Received";
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public int? Rating { get; set; }
+
+        public string? Feedback { get; set; }
+
+        public DateTime? CompletedAt { get; set; }
+
     }
 }

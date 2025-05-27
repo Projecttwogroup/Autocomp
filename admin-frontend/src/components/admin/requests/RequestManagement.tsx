@@ -56,7 +56,6 @@ interface AssignTechnicianDialogProps {
   onCancel: () => void;
 }
 
-
 interface Request {
   id: string;
   userId: string;
@@ -132,6 +131,8 @@ const RequestManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [isViewDetailsOpen, setIsViewDetailsOpen] = useState(false);
   const [isChangeStatusOpen, setIsChangeStatusOpen] = useState(false);
@@ -143,6 +144,10 @@ const RequestManagement = () => {
   const [currentTechnician, setCurrentTechnician] = useState<Technician | null>(
     null
   );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, departmentFilter]);
 
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
@@ -372,84 +377,79 @@ const RequestManagement = () => {
             </TableHeader>
             <TableBody>
               {filteredRequests.length > 0 ? (
-                filteredRequests.map((request) => (
-                  <TableRow key={request.id} className="dark:border-gray-700">
-                    <TableCell className="font-medium">{request.id}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="link"
-                        className="p-0 h-auto font-normal text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        onClick={() => handleViewUserProfile(request.userId)}
-                      >
-                        {request.userName}
-                      </Button>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(request.status)}</TableCell>
-                    <TableCell>{request.submissionDate}</TableCell>
-                    <TableCell>{request.department}</TableCell>
-                    <TableCell>
-                      {request.technician ? (
+                filteredRequests
+                  .slice(
+                    (currentPage - 1) * itemsPerPage,
+                    currentPage * itemsPerPage
+                  )
+                  .map((request) => (
+                    <TableRow key={request.id} className="dark:border-gray-700">
+                      <TableCell className="font-medium">
+                        {request.id}
+                      </TableCell>
+                      <TableCell>
                         <Button
                           variant="link"
                           className="p-0 h-auto font-normal text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                          onClick={() =>
-                            handleViewTechnicianProfile(
-                              request.technician as string
-                            )
-                          }
+                          onClick={() => handleViewUserProfile(request.userId)}
                         >
-                          {request.technician}
+                          {request.userName}
                         </Button>
-                      ) : (
-                        <span className="text-gray-400 dark:text-gray-500">
-                          Not assigned
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setCurrentRequest(request);
-                              setIsViewDetailsOpen(true);
-                            }}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(request.status)}</TableCell>
+                      <TableCell>{request.submissionDate}</TableCell>
+                      <TableCell>{request.department}</TableCell>
+                      <TableCell>
+                        {request.technician ? (
+                          <Button
+                            variant="link"
+                            className="p-0 h-auto font-normal text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                            onClick={() =>
+                              handleViewTechnicianProfile(
+                                request.technician as string
+                              )
+                            }
                           >
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </DropdownMenuItem>
-                          {request.status !== "Received" && (
+                            {request.technician}
+                          </Button>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">
+                            Not assigned
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() => {
                                 setCurrentRequest(request);
-                                setIsChangeStatusOpen(true);
+                                setIsViewDetailsOpen(true);
                               }}
                             >
-                              <Clock className="mr-2 h-4 w-4" />
-                              Change Status
+                              <Eye className="mr-2 h-4 w-4" />
+                              View Details
                             </DropdownMenuItem>
-                          )}
+                            {request.status !== "Received" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setCurrentRequest(request);
+                                  setIsChangeStatusOpen(true);
+                                }}
+                              >
+                                <Clock className="mr-2 h-4 w-4" />
+                                Change Status
+                              </DropdownMenuItem>
+                            )}
 
-                          {(!request.technician ||
-                            request.status === "Received") && (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setCurrentRequest(request);
-                                setIsAssignTechnicianOpen(true);
-                              }}
-                            >
-                              <UserPen className="mr-2 h-4 w-4" />
-                              Assign Technician
-                            </DropdownMenuItem>
-                          )}
-                          {request.status === "In Progress" &&
-                            request.technician && (
+                            {(!request.technician ||
+                              request.status === "Received") && (
                               <DropdownMenuItem
                                 onClick={() => {
                                   setCurrentRequest(request);
@@ -457,14 +457,26 @@ const RequestManagement = () => {
                                 }}
                               >
                                 <UserPen className="mr-2 h-4 w-4" />
-                                Change Technician
+                                Assign Technician
                               </DropdownMenuItem>
                             )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
+                            {request.status === "In Progress" &&
+                              request.technician && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setCurrentRequest(request);
+                                    setIsAssignTechnicianOpen(true);
+                                  }}
+                                >
+                                  <UserPen className="mr-2 h-4 w-4" />
+                                  Change Technician
+                                </DropdownMenuItem>
+                              )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : (
                 <TableRow className="dark:border-gray-700">
                   <TableCell colSpan={7} className="h-24 text-center">
@@ -474,6 +486,28 @@ const RequestManagement = () => {
               )}
             </TableBody>
           </Table>
+        </div>
+        <div className="flex justify-center items-center gap-4 py-4">
+          <Button
+            variant="outline"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+          >
+            Previous
+          </Button>
+          <span className="text-sm">
+            Page {currentPage} of{" "}
+            {Math.ceil(filteredRequests.length / itemsPerPage)}
+          </span>
+          <Button
+            variant="outline"
+            disabled={
+              currentPage === Math.ceil(filteredRequests.length / itemsPerPage)
+            }
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+          >
+            Next
+          </Button>
         </div>
       </div>
 

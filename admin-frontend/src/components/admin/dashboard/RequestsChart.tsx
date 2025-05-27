@@ -1,41 +1,39 @@
+import React, { useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from "recharts";
 
-import React from "react";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from "recharts";
+interface ChartProps {
+  technicianName: string;
+}
 
-const RequestsChart = () => {
-  // Mock data for the chart - removed "pending" data
-  const data = [
-    {
-      name: "Jan",
-      inProgress: 8,
-      completed: 24,
-    },
-    {
-      name: "Feb",
-      inProgress: 10,
-      completed: 22,
-    },
-    {
-      name: "Mar",
-      inProgress: 12,
-      completed: 28,
-    },
-    {
-      name: "Apr",
-      inProgress: 8,
-      completed: 30,
-    },
-    {
-      name: "May",
-      inProgress: 15,
-      completed: 24,
-    },
-    {
-      name: "Jun",
-      inProgress: 12,
-      completed: 28,
-    },
-  ];
+const RequestsChart: React.FC<ChartProps> = ({ technicianName }) => {
+  const [data, setData] = useState<
+    { name: string; completed: number; inProgress: number }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchChartData = async () => {
+      try {
+        const res = await fetch(
+          `https://localhost:7181/api/technician/${technicianName}/chart`
+        );
+        const chartData = await res.json();
+        setData(chartData);
+      } catch (err) {
+        console.error("Failed to load chart data", err);
+      }
+    };
+
+    if (technicianName) fetchChartData();
+  }, [technicianName]);
 
   return (
     <div className="h-[300px] w-full">
@@ -43,7 +41,7 @@ const RequestsChart = () => {
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="name" />
-          <YAxis />
+          <YAxis allowDecimals={false} domain={[0, "dataMax + 1"]} />
           <Tooltip
             contentStyle={{
               backgroundColor: "#fff",
@@ -52,9 +50,18 @@ const RequestsChart = () => {
             }}
           />
           <Legend />
-          <Bar dataKey="completed" name="Completed" fill="#10b981" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="inProgress" name="In Progress" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-          {/* Removed "pending" bar */}
+          <Bar
+            dataKey="completed"
+            name="Completed"
+            fill="#10b981"
+            radius={[4, 4, 0, 0]}
+          />
+          <Bar
+            dataKey="inProgress"
+            name="In Progress"
+            fill="#f59e0b"
+            radius={[4, 4, 0, 0]}
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
