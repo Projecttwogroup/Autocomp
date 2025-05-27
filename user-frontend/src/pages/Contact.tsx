@@ -9,19 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { Bot, Paperclip, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import * as signalR from '@microsoft/signalr';
+import * as signalR from "@microsoft/signalr";
 
 interface Message {
   id: string;
@@ -48,8 +43,9 @@ const Contact = () => {
   const searchParams = new URLSearchParams(location.search);
   const ticketId = searchParams.get("ticket");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const userId = localStorage.getItem('autocomp-user-id');
-  
+  const userId = localStorage.getItem("autocomp-user-id");
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
+
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -62,31 +58,46 @@ const Contact = () => {
 
       try {
         const response = await fetch(`/api/chat/${userId}`);
-        if (!response.ok) throw new Error('Failed to load chat history');
+        if (!response.ok) throw new Error("Failed to load chat history");
 
         const history = await response.json();
-        
+
         const processedMessages = history.map((entry: any) => ({
           id: Math.random().toString(36).substring(2),
           content: entry.content,
           sender: entry.sender === "admin" ? "agent" : entry.sender,
-          timestamp: new Date(entry.timestamp),
-          name: entry.sender === "admin" ? "Support Team" : entry.sender === "ai" ? "AI Assistant" : undefined,
-          attachments: entry.attachmentUrl ? [{
-            name: entry.attachmentName,
-            url: entry.attachmentUrl
-          }] : undefined
+          timestamp: new Date(entry.timestamp + "Z"),
+          name:
+            entry.sender === "admin"
+              ? "Support Team"
+              : entry.sender === "ai"
+              ? "AI Assistant"
+              : undefined,
+          attachments: entry.attachmentUrl
+            ? [
+                {
+                  name: entry.attachmentName,
+                  url: entry.attachmentUrl,
+                },
+              ]
+            : undefined,
         }));
 
         // Separate messages by type
-        setSupportMessages(processedMessages.filter((msg: Message) => msg.sender !== "ai"));
-        setAiMessages(processedMessages.filter((msg: Message) => msg.sender === "ai" || msg.sender === "user"));
+        setSupportMessages(
+          processedMessages.filter((msg: Message) => msg.sender !== "ai")
+        );
+        setAiMessages(
+          processedMessages.filter(
+            (msg: Message) => msg.sender === "ai" || msg.sender === "user"
+          )
+        );
       } catch (error) {
-        console.error('Failed to load chat history:', error);
+        console.error("Failed to load chat history:", error);
         toast({
           title: "Error",
           description: "Failed to load chat history. Please try again.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     };
@@ -99,36 +110,53 @@ const Contact = () => {
     const startConnection = async () => {
       try {
         const connection = new signalR.HubConnectionBuilder()
-          .withUrl('/chatHub')
+          .withUrl("/chatHub")
           .withAutomaticReconnect()
           .build();
 
-        connection.on('ReceiveMessage', (userId: string, sender: string, content: string | null, timestamp: string, attachments: Array<{name: string, url: string}>) => {
-          const newMessage: Message = {
-            id: `${sender}-${Date.now()}`,
-            content,
-            sender: sender === "admin" ? "agent" : sender as "user" | "agent" | "ai",
-            timestamp: new Date(timestamp),
-            attachments: attachments?.length > 0 ? attachments : undefined,
-            name: sender === "admin" ? "Support Team" : sender === "ai" ? "AI Assistant" : undefined
-          };
-          
-          if (sender === "ai") {
-            setAiMessages(prev => [...prev, newMessage]);
-          } else {
-            setSupportMessages(prev => [...prev, newMessage]);
+        connection.on(
+          "ReceiveMessage",
+          (
+            userId: string,
+            sender: string,
+            content: string | null,
+            timestamp: string,
+            attachments: Array<{ name: string; url: string }>
+          ) => {
+            const newMessage: Message = {
+              id: `${sender}-${Date.now()}`,
+              content,
+              sender:
+                sender === "admin"
+                  ? "agent"
+                  : (sender as "user" | "agent" | "ai"),
+              timestamp: new Date(timestamp),
+              attachments: attachments?.length > 0 ? attachments : undefined,
+              name:
+                sender === "admin"
+                  ? "Support Team"
+                  : sender === "ai"
+                  ? "AI Assistant"
+                  : undefined,
+            };
+
+            if (sender === "ai") {
+              setAiMessages((prev) => [...prev, newMessage]);
+            } else {
+              setSupportMessages((prev) => [...prev, newMessage]);
+            }
           }
-        });
+        );
 
         await connection.start();
         hubConnectionRef.current = connection;
-        console.log('SignalR Connected');
+        console.log("SignalR Connected");
       } catch (err) {
-        console.error('SignalR Connection Error:', err);
+        console.error("SignalR Connection Error:", err);
         toast({
           title: "Connection Error",
           description: "Failed to connect to chat service. Please try again.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     };
@@ -143,41 +171,46 @@ const Contact = () => {
   // Initialize messages based on whether a ticket ID is provided
   useEffect(() => {
     if (ticketId) {
-      setSupportMessages(prev => [{
-        id: "system-1",
-        content: `You're now chatting about request ${ticketId}. A support agent will join shortly.`,
-        sender: "agent",
-        timestamp: new Date(),
-        name: "System"
-      }, ...prev]);
+      setSupportMessages((prev) => [
+        {
+          id: "system-1",
+          content: `You're now chatting about request ${ticketId}. A support agent will join shortly.`,
+          sender: "agent",
+          timestamp: new Date(),
+          name: "System",
+        },
+        ...prev,
+      ]);
     } else if (supportMessages.length === 0) {
-      setSupportMessages([{
-        id: "welcome-1",
-        content: "Welcome to AutoComp Support! How can I help you today?",
-        sender: "agent",
-        timestamp: new Date(),
-        name: "Support Team"
-      }]);
+      setSupportMessages([
+        {
+          id: "welcome-1",
+          content: "Welcome to AutoComp Support! How can I help you today?",
+          sender: "agent",
+          timestamp: new Date(),
+          name: "Support Team",
+        },
+      ]);
     }
 
     if (aiMessages.length === 0) {
-      setAiMessages([{
-        id: "ai-welcome-1",
-        content: "Hello! I'm your AutoComp AI assistant. I can help you with common technical issues, guide you through troubleshooting steps, or connect you with a human agent if needed. How can I assist you today?",
-        sender: "ai",
-        timestamp: new Date(),
-        name: "AI Assistant"
-      }]);
+      setAiMessages([
+        {
+          id: "ai-welcome-1",
+          content:
+            "Hello! I'm your AutoComp AI assistant. I can help you with common technical issues, guide you through troubleshooting steps, or connect you with a human agent if needed. How can I assist you today?",
+          sender: "ai",
+          timestamp: new Date(),
+          name: "AI Assistant",
+        },
+      ]);
     }
   }, [ticketId]);
 
-  // Scroll to bottom whenever messages change
   useEffect(() => {
-    if (messagesEndRef.current) {
-      const chatContainer = messagesEndRef.current.parentElement;
-      if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
+    const container = messagesEndRef.current?.closest(".overflow-y-auto");
+    if (container) {
+      container.scrollTop = container.scrollHeight;
     }
   }, [supportMessages, aiMessages]);
 
@@ -208,7 +241,17 @@ const Contact = () => {
       };
 
       if (activeTab === "support") {
-        setSupportMessages((prev) => [...prev, newUserMessage]);
+        await fetch("/api/chathub/sendmessage", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            sender: "user",
+            content: message,
+          }),
+        });
       } else {
         setAiMessages((prev) => [...prev, newUserMessage]);
 
@@ -220,7 +263,8 @@ const Contact = () => {
           },
           body: JSON.stringify({
             userId,
-            prompt: message,
+            sender: "user",
+            content: message,
           }),
         });
 
@@ -259,37 +303,42 @@ const Contact = () => {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('userId', userId);
-      formData.append('sender', 'user');
-      
-      const response = await fetch('/api/chathub/sendattachments', {
-        method: 'POST',
+      formData.append("file", file);
+      formData.append("userId", userId);
+      formData.append("sender", "user");
+
+      const response = await fetch("/api/chathub/sendattachments", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        throw new Error("Upload failed");
       }
 
       const attachmentInfo = await response.json();
-      
+
       toast({
         title: "Success",
         description: "File uploaded successfully!",
       });
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error("File upload error:", error);
       toast({
         title: "Error",
         description: "Failed to upload file. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Asia/Amman",
+    });
   };
 
   const formatDateSeparator = (date: Date) => {
@@ -312,7 +361,7 @@ const Contact = () => {
   const renderMessagesWithSeparators = (messages: Message[]) => {
     const result: JSX.Element[] = [];
     let lastDate: string | null = null;
-  
+
     messages.forEach((msg) => {
       const currentDate = formatDateSeparator(msg.timestamp);
       if (currentDate !== lastDate) {
@@ -328,7 +377,7 @@ const Contact = () => {
         );
         lastDate = currentDate;
       }
-  
+
       result.push(
         <div
           key={msg.id}
@@ -357,50 +406,64 @@ const Contact = () => {
                     }
                     alt={msg.name}
                   />
-                  <AvatarFallback className={msg.sender === "ai" ? "bg-autocomp-600" : undefined}>
-                    {msg.sender === "ai" ? <Bot className="h-4 w-4" /> : msg.name.charAt(0)}
+                  <AvatarFallback
+                    className={
+                      msg.sender === "ai" ? "bg-autocomp-600" : undefined
+                    }
+                  >
+                    {msg.sender === "ai" ? (
+                      <Bot className="h-4 w-4" />
+                    ) : (
+                      msg.name.charAt(0)
+                    )}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium">{msg.name}</span>
               </div>
             )}
-            
-            <div
-              className={cn(
-                "rounded-lg px-4 py-2 text-sm",
-                {
+
+            {msg.content && (
+              <div
+                className={cn("rounded-lg px-4 py-2 text-sm", {
                   "bg-primary text-primary-foreground": msg.sender === "user",
                   "bg-muted": msg.sender !== "user",
-                }
-              )}
-            >
-              {msg.content}
-            </div>
-            
+                })}
+              >
+                {msg.content}
+              </div>
+            )}
+
             {msg.attachments && msg.attachments.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {msg.attachments.map((attachment, index) => (
-                  <div key={index} className="text-xs bg-background border rounded-lg px-2 py-1 flex items-center gap-1">
+                  <div
+                    key={index}
+                    className="text-xs bg-background border rounded-lg px-2 py-1 flex items-center gap-1"
+                  >
                     {attachment.url.match(/\.(jpeg|jpg|gif|png|ico)$/i) ? (
                       <img
                         src={attachment.url}
                         alt={attachment.name}
-                        className="rounded-lg object-cover w-full h-full max-w-[200px] max-h-[200px]"
+                        className="rounded-lg object-cover w-full h-full max-w-[200px] max-h-[200px] cursor-pointer hover:opacity-80"
+                        onClick={() => setEnlargedImage(attachment.url)}
                       />
                     ) : attachment.url.match(/\.(mp4|webm|ogg)$/i) ? (
                       <video
                         controls
                         className="rounded-lg object-cover w-full h-full max-w-[200px] max-h-[200px]"
                       >
-                        <source src={attachment.url} type={`video/${attachment.url.split('.').pop()}`} />
+                        <source
+                          src={attachment.url}
+                          type={`video/${attachment.url.split(".").pop()}`}
+                        />
                         Your browser does not support the video tag.
                       </video>
                     ) : (
                       <>
                         <Paperclip className="h-3 w-3" />
-                        <a 
-                          href={attachment.url} 
-                          target="_blank" 
+                        <a
+                          href={attachment.url}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="hover:underline"
                         >
@@ -412,7 +475,7 @@ const Contact = () => {
                 ))}
               </div>
             )}
-            
+
             <span className="text-xs text-muted-foreground">
               {formatTime(msg.timestamp)}
             </span>
@@ -420,7 +483,7 @@ const Contact = () => {
         </div>
       );
     });
-  
+
     return result;
   };
 
@@ -433,7 +496,12 @@ const Contact = () => {
         </p>
       </div>
 
-      <Tabs defaultValue="support" value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        defaultValue="support"
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
+      >
         <TabsList className="grid grid-cols-2">
           <TabsTrigger value="support">Support Chat</TabsTrigger>
           <TabsTrigger value="ai">AI Assistant</TabsTrigger>
@@ -444,7 +512,9 @@ const Contact = () => {
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex flex-col space-y-1.5">
                 <CardTitle>
-                  {activeTab === "support" ? "Technical Support" : "AI Assistant"}
+                  {activeTab === "support"
+                    ? "Technical Support"
+                    : "AI Assistant"}
                 </CardTitle>
                 <CardDescription>
                   {activeTab === "support" ? (
@@ -467,7 +537,10 @@ const Contact = () => {
                 </CardDescription>
               </div>
               {ticketId && (
-                <Badge variant="outline" className="bg-autocomp-50 text-autocomp-600 border-autocomp-200 dark:bg-autocomp-950 dark:text-autocomp-400 dark:border-autocomp-800">
+                <Badge
+                  variant="outline"
+                  className="bg-autocomp-50 text-autocomp-600 border-autocomp-200 dark:bg-autocomp-950 dark:text-autocomp-400 dark:border-autocomp-800"
+                >
                   Request: {ticketId}
                 </Badge>
               )}
@@ -482,8 +555,14 @@ const Contact = () => {
                       <div className="rounded-lg px-4 py-2 bg-muted text-sm">
                         <div className="flex gap-1 items-center">
                           <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"></div>
-                          <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                          <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                          <div
+                            className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
+                            style={{ animationDelay: "0.4s" }}
+                          ></div>
                         </div>
                       </div>
                     </div>
@@ -519,7 +598,11 @@ const Contact = () => {
                   </Button>
                   <Input
                     type="text"
-                    placeholder={activeTab === "support" ? "Type your message..." : "Ask the AI assistant..."}
+                    placeholder={
+                      activeTab === "support"
+                        ? "Type your message..."
+                        : "Ask the AI assistant..."
+                    }
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="flex-1"
@@ -545,8 +628,14 @@ const Contact = () => {
                       <div className="rounded-lg px-4 py-2 bg-muted text-sm">
                         <div className="flex gap-1 items-center">
                           <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"></div>
-                          <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                          <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0.4s" }}></div>
+                          <div
+                            className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
+                            style={{ animationDelay: "0.2s" }}
+                          ></div>
+                          <div
+                            className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce"
+                            style={{ animationDelay: "0.4s" }}
+                          ></div>
                         </div>
                       </div>
                     </div>
@@ -599,7 +688,8 @@ const Contact = () => {
                   <span className="font-medium">Closed</span>
                 </div>
                 <div className="text-sm text-muted-foreground pt-2">
-                  All times are in your local timezone. Emergency support is available 24/7.
+                  All times are in your local timezone. Emergency support is
+                  available 24/7.
                 </div>
               </CardContent>
             </Card>
@@ -611,7 +701,10 @@ const Contact = () => {
               <CardContent className="space-y-2">
                 <div className="flex justify-between">
                   <span>Email</span>
-                  <a href="mailto:support@autocomp.example" className="font-medium text-autocomp-600 dark:text-autocomp-400 hover:underline">
+                  <a
+                    href="mailto:support@autocomp.example"
+                    className="font-medium text-autocomp-600 dark:text-autocomp-400 hover:underline"
+                  >
                     support@autocomp.example
                   </a>
                 </div>
@@ -621,15 +714,30 @@ const Contact = () => {
                 </div>
                 <div className="flex justify-between">
                   <span>Location</span>
-                  <span className="font-medium">Main Office, IT Department</span>
+                  <span className="font-medium">
+                    Main Office, IT Department
+                  </span>
                 </div>
                 <div className="text-sm text-muted-foreground pt-2">
-                  For urgent issues outside of business hours, please call the emergency support line.
+                  For urgent issues outside of business hours, please call the
+                  emergency support line.
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
+        {enlargedImage && (
+          <div
+            className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center"
+            onClick={() => setEnlargedImage(null)}
+          >
+            <img
+              src={enlargedImage}
+              alt="Enlarged"
+              className="max-w-full max-h-full rounded-lg border border-white"
+            />
+          </div>
+        )}
       </Tabs>
     </div>
   );

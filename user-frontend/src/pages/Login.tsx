@@ -91,24 +91,12 @@ const Login = () => {
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-6">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-autocomp-500">
-              <svg
-                xmlns="https://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-6 w-6"
-              >
-                <path d="M20 7h-3a2 2 0 0 0-2 2v1H9V9a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3a2 2 0 0 0 2-2v-1h6v1a2 2 0 0 0 2 2h3a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z" />
-              </svg>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg">
+              <img src="/favicon.ico" alt="AutoComp Logo" className="h-10 w-10" />
             </div>
             <span className="font-bold text-2xl">AutoComp</span>
           </div>
         </div>
-
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Login</CardTitle>

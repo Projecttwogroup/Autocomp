@@ -23,6 +23,7 @@
         [HttpPost("sendmessage")]
         public async Task<IActionResult> SendMessage([FromBody] SendMessageRequest request)
         {
+            Console.WriteLine($"[DEBUG] Incoming message: {request.UserId}, {request.Sender}, {request.Content}");
             if (string.IsNullOrWhiteSpace(request.Content))
             {
                 return BadRequest("Message content cannot be empty.");

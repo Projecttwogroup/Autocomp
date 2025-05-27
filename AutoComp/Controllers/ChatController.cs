@@ -3,6 +3,7 @@
     using AutoComp.Data;
     using AutoComp.DTOs;
     using Microsoft.AspNetCore.Mvc;
+    using Microsoft.EntityFrameworkCore;
 
     [ApiController]
     [Route("api/chat")]
@@ -21,7 +22,7 @@
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
             var messages = _context.ChatMessages
-                .Where(m => m.UserId == userId)
+                .Where(m => m.UserId == userId && m.Content != null)
                 .Select(m => new UnifiedChatEntry
                 {
                     UserId = m.UserId,
@@ -48,5 +49,28 @@
 
             return Ok(combined);
         }
+
+        [HttpGet("users")]
+        public async Task<IActionResult> GetChatUsers()
+        {
+            var usersWithMessages = await _context.ChatMessages
+                .Select(m => m.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            var users = await _context.Users
+                .Where(u => usersWithMessages.Contains(u.Id))
+                .Select(u => new
+                {
+                    userId = u.Id,
+                    userName = u.Name,
+                    email = u.Email
+                })
+                .ToListAsync();
+
+            return Ok(users);
+        }
+
+
     }
 }
