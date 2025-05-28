@@ -53,22 +53,60 @@
         [HttpGet("users")]
         public async Task<IActionResult> GetChatUsers()
         {
-            var usersWithMessages = await _context.ChatMessages
-                .Select(m => m.UserId)
-                .Distinct()
-                .ToListAsync();
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
-            var users = await _context.Users
-                .Where(u => usersWithMessages.Contains(u.Id))
-                .Select(u => new
+            var messageGroups = await _context.ChatMessages
+                .GroupBy(m => m.UserId)
+                .Select(g => new
                 {
-                    userId = u.Id,
-                    userName = u.Name,
-                    email = u.Email
+                    UserId = g.Key,
+                    LastMessage = g.OrderByDescending(m => m.Timestamp).FirstOrDefault()
                 })
                 .ToListAsync();
 
-            return Ok(users);
+            var attachmentGroups = await _context.ChatAttachments
+                .GroupBy(a => a.UserId)
+                .Select(g => new
+                {
+                    UserId = g.Key,
+                    LastAttachment = g.OrderByDescending(a => a.UploadDate).FirstOrDefault()
+                })
+                .ToListAsync();
+
+            var users = await _context.Users
+                .Where(u => u.Role != "admin")
+                .ToListAsync();
+
+            var result = users.Select(user =>
+            {
+                var userId = user.Id;
+
+                var msg = messageGroups.FirstOrDefault(m => m.UserId == userId)?.LastMessage;
+                var att = attachmentGroups.FirstOrDefault(a => a.UserId == userId)?.LastAttachment;
+
+                // Determine which is newer: message or attachment
+                var latestTime = new[] {
+            msg?.Timestamp ?? DateTime.MinValue,
+            att?.UploadDate ?? DateTime.MinValue
+        }.Max();
+
+                var latestIsAttachment = att != null && att.UploadDate >= (msg?.Timestamp ?? DateTime.MinValue);
+
+                return new
+                {
+                    userId = user.Id,
+                    userName = user.Name,
+                    email = user.Email,
+                    lastMessage = latestIsAttachment ? "" : msg?.Content ?? "",
+                    lastAttachmentUrl = latestIsAttachment ? $"{baseUrl}{att.FilePath}" : null,
+                    lastAttachmentName = latestIsAttachment ? att.OriginalFileName : null,
+                    lastTimestamp = (att == null && msg == null) ? ""
+    : (latestIsAttachment ? att?.UploadDate : msg?.Timestamp)?.ToString("o") ?? "",
+                    unreadCount = 0
+                };
+            });
+
+            return Ok(result);
         }
 
 

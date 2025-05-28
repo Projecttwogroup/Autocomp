@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { MessageSquare, Send, User } from "lucide-react";
+import { MessageSquare, Send, Paperclip, User } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 
 interface ChatConversation {
+  lastAttachmentUrl: any;
   id: string;
   userId: string;
   userName: string;
@@ -36,7 +37,30 @@ interface ChatMessage {
   sender: string;
   message: string | null;
   timestamp: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
 }
+
+const formatDateSeparator = (date: Date) => {
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const isSameDate = (a: Date, b: Date) =>
+    a.getDate() === b.getDate() &&
+    a.getMonth() === b.getMonth() &&
+    a.getFullYear() === b.getFullYear();
+
+  if (isSameDate(date, today)) return "Today";
+  if (isSameDate(date, yesterday)) return "Yesterday";
+
+  return date.toLocaleDateString(undefined, {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
 
 const AdminCommunication = () => {
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
@@ -46,8 +70,10 @@ const AdminCommunication = () => {
   );
   const [newMessage, setNewMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   const filteredConversations = conversations.filter(
     (conversation) =>
@@ -63,16 +89,47 @@ const AdminCommunication = () => {
     fetch("https://localhost:7181/api/chat/users")
       .then((res) => res.json())
       .then((users) => {
-        const withDefaults = users.map((u: any) => ({
-          ...u,
-          lastMessage: u.lastMessage || "",
-          lastTimestamp: u.lastTimestamp || "",
-          unreadCount: u.unreadCount || 0,
-          messages: [],
-        }));
+        const withDefaults = users.map((u: any) => {
+          const timestamp = u.lastTimestamp ? u.lastTimestamp + "Z" : "";
+
+          return {
+            ...u,
+            lastMessage: u.lastMessage || "",
+            lastAttachmentUrl: u.lastAttachmentUrl || "",
+            lastTimestamp: timestamp,
+            unreadCount: u.unreadCount || 0,
+            messages: [],
+          };
+        });
+
         setConversations(withDefaults);
       })
       .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetch("https://localhost:7181/api/chat/users")
+        .then((res) => res.json())
+        .then((users) => {
+          const withDefaults = users.map((u: any) => {
+            const timestamp = u.lastTimestamp ? u.lastTimestamp + "Z" : "";
+
+            return {
+              ...u,
+              lastMessage: u.lastMessage || "",
+              lastTimestamp: timestamp,
+              unreadCount: u.unreadCount || 0,
+              messages: [],
+            };
+          });
+
+          setConversations(withDefaults);
+        })
+        .catch(console.error);
+    }, 5000); // fetch every 5 seconds
+
+    return () => clearInterval(intervalId); // cleanup
   }, []);
 
   useEffect(() => {
@@ -90,21 +147,19 @@ const AdminCommunication = () => {
           timestamp: now,
         };
 
-        const updatedConversations = conversations.map((conv) => {
-          if (conv.id === selectedChat.id) {
-            return {
-              ...conv,
-              lastMessage: newMessage.trim(),
-              lastTimestamp: now,
-              messages: Array.isArray(conv.messages)
-                ? [...conv.messages, newMsg]
-                : [newMsg],
-            };
-          }
-          return conv;
-        });
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.userId === selectedChat.userId
+              ? {
+                  ...conv,
+                  lastMessage: newMessage.trim(),
+                  lastTimestamp: now,
+                  messages: [...conv.messages, newMsg],
+                }
+              : conv
+          )
+        );
 
-        setConversations(updatedConversations);
         setSelectedChat({
           ...selectedChat,
           unreadCount: 0,
@@ -118,64 +173,36 @@ const AdminCommunication = () => {
   }, [selectedChat]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat) return;
+    if (!selectedChat) return;
 
     const now = new Date().toISOString();
-    const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      sender: "admin",
-      message: newMessage.trim(),
-      timestamp: now,
-    };
 
-    const updatedConversations = conversations.map((conv) => {
-      if (conv.id === selectedChat.id) {
-        return {
-          ...conv,
-          lastMessage: newMessage.trim(),
-          lastTimestamp: now,
-          messages: [...conv.messages, newMsg],
-        };
-      }
-      return conv;
-    });
-
-    setConversations(updatedConversations);
-    setSelectedChat({
-      ...selectedChat,
-      lastMessage: newMessage.trim(),
-      lastTimestamp: now,
-      messages: [...selectedChat.messages, newMsg],
-    });
-    setNewMessage("");
-
-    toast({
-      title: "Message Sent",
-      description: `Your message has been sent to ${selectedChat.userName}.`,
-    });
-
-    setTimeout(scrollToBottom, 100);
-    await fetch("https://localhost:7181/api/chathub/sendmessage", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: selectedChat.userId,
+    if (newMessage.trim()) {
+      const newMsg: ChatMessage = {
+        id: `msg-${Date.now()}`,
         sender: "admin",
-        content: newMessage.trim(),
-      }),
-    });
-    await fetch(`https://localhost:7181/api/chat/${selectedChat.userId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        const messages = data.map((msg: any, i: number) => ({
-          id: `msg-${i}`,
-          sender: msg.sender,
-          message: msg.content,
-          timestamp: msg.timestamp + "Z",
-        }));
+        message: newMessage.trim(),
+        timestamp: now,
+      };
 
-        setSelectedChat((prev) => (prev ? { ...prev, messages } : prev));
+      await fetch("https://localhost:7181/api/chathub/sendmessage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: selectedChat.userId,
+          sender: "admin",
+          content: newMessage.trim(),
+        }),
       });
+
+      setSelectedChat({
+        ...selectedChat,
+        messages: [...selectedChat.messages, newMsg],
+      });
+
+      setNewMessage("");
+      scrollToBottom();
+    }
   };
 
   const formatTime = (timestamp: string) => {
@@ -188,13 +215,41 @@ const AdminCommunication = () => {
   };
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString();
+    if (!timestamp) return "";
+
+    const jordanDate = new Date(
+      new Date(timestamp + "Z").toLocaleString("en-US", {
+        timeZone: "Asia/Amman",
+      })
+    );
+
+    const jordanNow = new Date(
+      new Date().toLocaleString("en-US", {
+        timeZone: "Asia/Amman",
+      })
+    );
+
+    const isToday =
+      jordanDate.getDate() === jordanNow.getDate() &&
+      jordanDate.getMonth() === jordanNow.getMonth() &&
+      jordanDate.getFullYear() === jordanNow.getFullYear();
+
+    return isToday
+      ? jordanDate.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : jordanDate.toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        });
   };
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
+      <div className="space-y-4 overflow-hidden max-h-[100vh]">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight">Communication</h1>
         </div>
@@ -227,31 +282,37 @@ const AdminCommunication = () => {
                           ? "bg-blue-50"
                           : "hover:bg-gray-50"
                       }`}
-                      onClick={() => {
+                      onClick={async () => {
                         setSelectedUser({
                           userId: conversation.userId,
                           userName: conversation.userName,
-                          email: "", // optional if you don’t use email
+                          email: "",
                         });
 
-                        fetch(
+                        const res = await fetch(
                           `https://localhost:7181/api/chat/${conversation.userId}`
-                        )
-                          .then((res) => res.json())
-                          .then((data) => {
-                            const messages = data.map(
-                              (msg: any, i: number) => ({
-                                id: `msg-${i}`,
-                                sender: msg.sender,
-                                message: msg.content,
-                                timestamp: msg.timestamp + "Z",
-                              })
-                            );
-                            setSelectedChat({
-                              ...conversation,
-                              messages,
-                            });
+                        );
+                        const data = await res.json();
+                        const messages = data.map((msg: any, i: number) => ({
+                          id: `msg-${i}`,
+                          sender: msg.sender,
+                          message: msg.content,
+                          timestamp: msg.timestamp + "Z",
+                          attachmentUrl: msg.attachmentUrl || undefined,
+                          attachmentName: msg.attachmentName || undefined,
+                        }));
+
+                        setSelectedChat({
+                          ...conversation,
+                          messages,
+                        });
+
+                        // Give a slight delay to allow DOM to render first, then scroll
+                        setTimeout(() => {
+                          messagesEndRef.current?.scrollIntoView({
+                            behavior: "auto",
                           });
+                        }, 0);
                       }}
                     >
                       <div className="flex items-center gap-3">
@@ -273,13 +334,17 @@ const AdminCommunication = () => {
                             )}
                           </div>
                           <p className="text-xs text-muted-foreground line-clamp-1">
-                            {conversation.lastMessage}
+                            {conversation.lastMessage?.trim()?.length
+                              ? conversation.lastMessage.trim()
+                              : conversation.lastAttachmentUrl
+                              ? "[Image]"
+                              : ""}
                           </p>
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {conversation.lastTimestamp
-                          ? formatDate(conversation.lastTimestamp)
+                          ? formatTime(conversation.lastTimestamp)
                           : ""}
                       </div>
                     </div>
@@ -316,58 +381,208 @@ const AdminCommunication = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="flex flex-col h-[calc(100vh-300px)]">
+                  <div className="flex flex-col h-[calc(100vh-270px)]">
                     <div className="flex-1 overflow-y-auto p-4">
-                      <div className="space-y-4">
-                        {selectedChat.messages.map((message) => (
-                          <div
-                            key={message.id}
-                            className={`flex ${
-                              message.sender === "admin"
-                                ? "justify-end"
-                                : "justify-start"
-                            }`}
-                          >
-                            <div
-                              className={`max-w-[80%] px-4 py-2 rounded-lg ${
-                                message.sender === "admin"
-                                  ? "bg-blue-500 text-white"
-                                  : "bg-gray-100"
-                              }`}
-                            >
-                              <p>{message.message}</p>
-                              <div
-                                className={`text-xs mt-1 text-right ${
-                                  message.sender === "admin"
-                                    ? "text-blue-100"
-                                    : "text-gray-500"
-                                }`}
-                              >
-                                {formatTime(message.timestamp)}
-                              </div>
-                            </div>
+                      <div className="space-y-4 overflow-hidden h-full">
+                        {selectedChat.messages.length === 0 ? (
+                          <div className="text-muted-foreground text-sm text-center">
+                            No messages yet.
                           </div>
-                        ))}
-                        <div ref={messagesEndRef} />
+                        ) : (
+                          <>
+                            {" "}
+                            {(() => {
+                              const result: JSX.Element[] = [];
+                              let lastDate: string | null = null;
+
+                              selectedChat.messages.forEach((message) => {
+                                const dateObj = new Date(message.timestamp);
+                                const currentDate =
+                                  formatDateSeparator(dateObj);
+
+                                if (currentDate !== lastDate) {
+                                  result.push(
+                                    <div
+                                      key={`separator-${dateObj.toISOString()}`}
+                                      className="text-center text-xs text-muted-foreground my-4"
+                                    >
+                                      <span className="inline-block py-1 px-3 bg-muted rounded-full">
+                                        {currentDate}
+                                      </span>
+                                    </div>
+                                  );
+                                  lastDate = currentDate;
+                                }
+
+                                result.push(
+                                  <div
+                                    key={message.id}
+                                    className={`flex ${
+                                      message.sender === "admin"
+                                        ? "justify-end"
+                                        : "justify-start"
+                                    }`}
+                                  >
+                                    <div className="max-w-[80%] flex flex-col gap-1">
+                                      <>
+                                        {message.message && (
+                                          <div
+                                            className={`px-4 py-2 rounded-lg inline-block ${
+                                              message.sender === "admin"
+                                                ? "bg-blue-500 text-white"
+                                                : "bg-gray-100"
+                                            }`}
+                                          >
+                                            <p>{message.message}</p>
+                                          </div>
+                                        )}
+
+                                        {message.attachmentUrl &&
+                                          (/\.(jpg|jpeg|png|gif|ico)$/i.test(
+                                            message.attachmentUrl
+                                          ) ? (
+                                            <img
+                                              src={message.attachmentUrl}
+                                              alt={message.attachmentName}
+                                              onClick={() =>
+                                                setEnlargedImage(
+                                                  message.attachmentUrl!
+                                                )
+                                              }
+                                              className="rounded-lg object-cover max-w-[200px] max-h-[200px] mt-1 cursor-pointer hover:opacity-80"
+                                            />
+                                          ) : /\.(mp4|webm|ogg)$/i.test(
+                                              message.attachmentUrl
+                                            ) ? (
+                                            <video
+                                              controls
+                                              className="rounded-lg object-cover max-w-[200px] max-h-[200px] mt-1"
+                                            >
+                                              <source
+                                                src={message.attachmentUrl}
+                                              />
+                                              Your browser does not support the
+                                              video tag.
+                                            </video>
+                                          ) : (
+                                            <a
+                                              href={message.attachmentUrl}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="underline text-blue-500 block mt-1"
+                                            >
+                                              📎 {message.attachmentName}
+                                            </a>
+                                          ))}
+                                        <div className="text-xs text-black mt-1 text-right">
+                                          {formatTime(message.timestamp)}
+                                        </div>
+                                      </>
+                                    </div>
+                                  </div>
+                                );
+                              });
+
+                              return result;
+                            })()}
+                            <div ref={messagesEndRef} />
+                          </>
+                        )}
                       </div>
                     </div>
-                    <div className="border-t p-4">
-                      <div className="flex gap-2">
-                        <Textarea
-                          placeholder="Type your message..."
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          className="min-h-[80px]"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                            }
-                          }}
-                        />
-                        <Button onClick={handleSendMessage} className="h-auto">
-                          <Send className="h-4 w-4" />
-                        </Button>
+                    <div className="border-t px-4 py-1">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2 items-center h-[50px]">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-[42px] w-[42px]"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Paperclip className="h-4 w-4" />
+                          </Button>
+
+                          <Textarea
+                            placeholder="Type your message..."
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            className="min-h-[50px] w-full"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                              }
+                            }}
+                          />
+
+                          <Button
+                            onClick={handleSendMessage}
+                            className="h-[42px] w-[42px] p-0"
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file || !selectedChat) return;
+
+                              const formData = new FormData();
+                              formData.append("file", file);
+                              formData.append("userId", selectedChat.userId);
+                              formData.append("sender", "admin");
+
+                              const response = await fetch(
+                                "https://localhost:7181/api/chathub/sendattachments",
+                                {
+                                  method: "POST",
+                                  body: formData,
+                                }
+                              );
+
+                              if (!response.ok) {
+                                toast({
+                                  title: "Failed to upload attachment.",
+                                });
+                                return;
+                              }
+
+                              const result = await response.json();
+                              const now = new Date().toISOString();
+
+                              const newMsg: ChatMessage = {
+                                id: `att-${Date.now()}`,
+                                sender: "admin",
+                                message: null,
+                                timestamp: now,
+                                attachmentUrl: result.url,
+                                attachmentName: result.name,
+                              };
+
+                              setSelectedChat({
+                                ...selectedChat,
+                                messages: [...selectedChat.messages, newMsg],
+                              });
+                              setConversations((prev) =>
+                                prev.map((conv) =>
+                                  conv.userId === selectedChat.userId
+                                    ? {
+                                        ...conv,
+                                        lastMessage: "", // Force empty so "[Image]" shows
+                                        lastTimestamp: now,
+                                      }
+                                    : conv
+                                )
+                              );
+
+                              setTimeout(scrollToBottom, 100);
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -386,6 +601,18 @@ const AdminCommunication = () => {
           </Card>
         </div>
       </div>
+      {enlargedImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black bg-opacity-80 flex items-center justify-center"
+          onClick={() => setEnlargedImage(null)}
+        >
+          <img
+            src={enlargedImage}
+            alt="Enlarged"
+            className="max-w-full max-h-full rounded-lg border border-white"
+          />
+        </div>
+      )}
     </AdminLayout>
   );
 };
