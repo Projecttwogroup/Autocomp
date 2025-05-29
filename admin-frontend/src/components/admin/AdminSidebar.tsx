@@ -30,7 +30,7 @@ const AdminSidebar = () => {
   return (
     <div
       className={cn(
-        "bg-sidebar shadow-md z-10 transition-all duration-300 flex flex-col h-screen",
+        "bg-sidebar z-10 transition-all duration-300 flex flex-col h-screen",
         collapsed ? "w-16" : "w-64"
       )}
     >

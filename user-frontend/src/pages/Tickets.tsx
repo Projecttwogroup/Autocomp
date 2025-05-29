@@ -123,7 +123,7 @@ const Tickets = () => {
           ticket.attachments?.map((file: any) => ({
             name: file.name,
             type: getFileMimeType(file.url),
-            url: `https://localhost:7181${file.url}`,
+            url: `https://localhost:7181/${encodeURI(file.url)}`,
           })) || [],
         updates: [
           {
@@ -222,21 +222,41 @@ const Tickets = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (ticketToDelete) {
-      try {
-        // Filter out the deleted ticket
-        const updatedTickets = tickets.filter(
-          (ticket) => ticket.id !== ticketToDelete
-        );
-        setTickets(updatedTickets);
+      const userId = localStorage.getItem("autocomp-user-id");
+      if (!userId) return;
 
-        toast({
-          title: "Request Deleted",
-          description: `Request ${ticketToDelete} has been deleted.`,
-        });
+      try {
+        const response = await fetch(
+          `https://localhost:7181/api/ticket/${userId}/${ticketToDelete}`,
+          { method: "DELETE" }
+        );
+
+        if (response.ok) {
+          const updatedTickets = tickets.filter(
+            (ticket) => ticket.id !== ticketToDelete
+          );
+          setTickets(updatedTickets);
+
+          toast({
+            title: "Request Deleted",
+            description: `Request ${ticketToDelete} has been successfully deleted.`,
+          });
+        } else {
+          toast({
+            title: "Deletion Failed",
+            description: "The request could not be deleted from the server.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error("Error deleting ticket:", error);
+        toast({
+          title: "Error",
+          description: "Something went wrong while deleting the request.",
+          variant: "destructive",
+        });
       } finally {
         setIsDeleteDialogOpen(false);
         setTicketToDelete(null);

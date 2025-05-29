@@ -127,7 +127,7 @@ const AdminCommunication = () => {
           setConversations(withDefaults);
         })
         .catch(console.error);
-    }, 5000); // fetch every 5 seconds
+    }, 3000); // fetch every 3 seconds
 
     return () => clearInterval(intervalId); // cleanup
   }, []);
@@ -256,7 +256,7 @@ const AdminCommunication = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Conversations List */}
-          <Card className="lg:col-span-1">
+          <Card className="lg:col-span-1 flex flex-col h-[calc(100vh-130px)]">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
@@ -271,7 +271,7 @@ const AdminCommunication = () => {
                 />
               </div>
             </CardHeader>
-            <CardContent className="h-[calc(100vh-280px)] overflow-y-auto">
+            <CardContent className="overflow-y-auto flex-1">
               {filteredConversations.length > 0 ? (
                 <div className="space-y-2">
                   {filteredConversations.map((conversation) => (
@@ -279,8 +279,8 @@ const AdminCommunication = () => {
                       key={conversation.id}
                       className={`flex items-center justify-between p-3 rounded-md cursor-pointer ${
                         selectedChat?.id === conversation.id
-                          ? "bg-blue-50"
-                          : "hover:bg-gray-50"
+                          ? "bg-blue-50 dark:bg-blue-900/20"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
                       }`}
                       onClick={async () => {
                         setSelectedUser({
@@ -317,7 +317,7 @@ const AdminCommunication = () => {
                     >
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarFallback className="bg-blue-100 text-blue-600">
+                          <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                             {conversation.userName
                               .split(" ")
                               .map((n) => n[0])
@@ -366,7 +366,7 @@ const AdminCommunication = () => {
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                        <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
                           {selectedChat.userName
                             .split(" ")
                             .map((n) => n[0])
@@ -381,9 +381,9 @@ const AdminCommunication = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="flex flex-col h-[calc(100vh-270px)]">
-                    <div className="flex-1 overflow-y-auto p-4">
-                      <div className="space-y-4 overflow-hidden h-full">
+                  <div className="flex flex-col min-h-[500px] h-[calc(100vh-270px)]">
+                    <div className="grow overflow-y-auto p-4">
+                      <div className="space-y-4 overflow-y-auto h-full pr-1">
                         {selectedChat.messages.length === 0 ? (
                           <div className="text-muted-foreground text-sm text-center">
                             No messages yet.
@@ -430,7 +430,7 @@ const AdminCommunication = () => {
                                             className={`px-4 py-2 rounded-lg inline-block ${
                                               message.sender === "admin"
                                                 ? "bg-blue-500 text-white"
-                                                : "bg-gray-100"
+                                                : "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-gray-100"
                                             }`}
                                           >
                                             <p>{message.message}</p>
@@ -474,7 +474,13 @@ const AdminCommunication = () => {
                                               📎 {message.attachmentName}
                                             </a>
                                           ))}
-                                        <div className="text-xs text-black mt-1 text-right">
+                                        <div
+                                          className={`text-xs mt-1 text-right ${
+                                            message.sender === "admin"
+                                              ? "text-blue-100"
+                                              : "text-gray-500 dark:text-gray-400"
+                                          }`}
+                                        >
                                           {formatTime(message.timestamp)}
                                         </div>
                                       </>
@@ -507,7 +513,7 @@ const AdminCommunication = () => {
                             placeholder="Type your message..."
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
-                            className="min-h-[50px] w-full"
+                            className="w-full px-3 py-2 text-base border border-input shadow-sm rounded-md resize-none leading-none min-h-0 h-[38px]"
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();

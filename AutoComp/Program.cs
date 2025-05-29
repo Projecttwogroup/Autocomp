@@ -42,6 +42,7 @@ if (app.Environment.IsDevelopment())
 // 6. Middleware order matters
 app.UseCors();
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Enables serving everything from wwwroot/
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(

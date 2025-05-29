@@ -1,43 +1,102 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { FileText, CheckCircle, Clock, Clock as Pending } from "lucide-react";
 import RequestsChart from "./dashboard/RequestsChart";
 import RecentRequests from "./dashboard/RecentRequests";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import RequestsStatusChart from "./dashboard/RequestsStatusChart";
 
 const AdminDashboard = () => {
-  // Mock data for demonstration purposes
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: "Total Requests",
-      value: 248,
+      value: 0,
       icon: FileText,
       color: "bg-blue-500",
-      change: "+12% from last month",
+      change: "",
     },
     {
       title: "Completed",
-      value: 187,
+      value: 0,
       icon: CheckCircle,
       color: "bg-green-500",
-      change: "+8% from last month",
+      change: "",
     },
     {
       title: "In Progress",
-      value: 42,
+      value: 0,
       icon: Clock,
       color: "bg-yellow-500",
-      change: "-3% from last month",
+      change: "",
     },
     {
       title: "Pending",
-      value: 19,
+      value: 0,
       icon: Pending,
       color: "bg-red-500",
-      change: "+5% from last month",
+      change: "",
     },
-  ];
+  ]);
+
+  useEffect(() => {
+    axios
+      .get("https://localhost:7181/api/dashboard/admin/stats")
+      .then((res) => {
+        const {
+          totalTickets,
+          completedTickets,
+          inProgressTickets,
+          pendingTickets,
+        } = res.data;
+        setStats([
+          {
+            title: "Total Requests",
+            value: totalTickets,
+            icon: FileText,
+            color: "bg-blue-500",
+            change: "",
+          },
+          {
+            title: "Completed",
+            value: completedTickets,
+            icon: CheckCircle,
+            color: "bg-green-500",
+            change: "",
+          },
+          {
+            title: "In Progress",
+            value: inProgressTickets,
+            icon: Clock,
+            color: "bg-yellow-500",
+            change: "",
+          },
+          {
+            title: "Pending",
+            value: pendingTickets,
+            icon: Pending,
+            color: "bg-red-500",
+            change: "",
+          },
+        ]);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
+  const [overview, setOverview] = useState({
+    technicians: [],
+    recentTickets: [],
+    departmentStats: [],
+    requestsChartData: [],
+  });
+
+  useEffect(() => {
+    axios
+      .get("https://localhost:7181/api/dashboard/admin/overview")
+      .then((res) => setOverview(res.data))
+      .catch((err) => console.error(err));
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -49,7 +108,9 @@ const AdminDashboard = () => {
           return (
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
                 <div className={`${stat.color} p-2 rounded-md`}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
@@ -69,42 +130,28 @@ const AdminDashboard = () => {
             <CardTitle>Request Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <RequestsChart />
+            <RequestsStatusChart data={overview.requestsChartData} />
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Technician Performance</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Jane Smith</div>
-                <div className="text-sm text-muted-foreground">92%</div>
-              </div>
-              <Progress value={92} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Robert Johnson</div>
-                <div className="text-sm text-muted-foreground">88%</div>
-              </div>
-              <Progress value={88} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Lisa Chen</div>
-                <div className="text-sm text-muted-foreground">76%</div>
-              </div>
-              <Progress value={76} className="h-2" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Michael Brown</div>
-                <div className="text-sm text-muted-foreground">70%</div>
-              </div>
-              <Progress value={70} className="h-2" />
-            </div>
+          <CardContent className="space-y-4">
+            {overview.technicians.map((t, i) => {
+              const rate = t.performance;
+
+              return (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium">{t.name}</div>
+                    <div className="text-sm text-muted-foreground">{rate}%</div>
+                  </div>
+                  <Progress value={rate} className="h-2" />
+                </div>
+              );
+            })}
           </CardContent>
         </Card>
       </div>
@@ -127,48 +174,21 @@ const AdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">Hardware Support</div>
-                  <div className="text-sm text-muted-foreground">48 requests</div>
+              {overview.departmentStats.map((d, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">{d.department}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {d.count} requests
+                    </div>
+                  </div>
+                  <Progress
+                    value={Math.min((d.count / 100) * 100, 100)}
+                    max={100}
+                    className="h-2"
+                  />
                 </div>
-                <Progress value={48} max={100} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">Software Support</div>
-                  <div className="text-sm text-muted-foreground">36 requests</div>
-                </div>
-                <Progress value={36} max={100} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">Network Support</div>
-                  <div className="text-sm text-muted-foreground">16 requests</div>
-                </div>
-                <Progress value={16} max={100} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">Printer Support</div>
-                  <div className="text-sm text-muted-foreground">12 requests</div>
-                </div>
-                <Progress value={12} max={100} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">Account Management</div>
-                  <div className="text-sm text-muted-foreground">8 requests</div>
-                </div>
-                <Progress value={8} max={100} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">Other</div>
-                  <div className="text-sm text-muted-foreground">5 requests</div>
-                </div>
-                <Progress value={5} max={100} className="h-2" />
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>

@@ -46,6 +46,40 @@ const Contact = () => {
   const userId = localStorage.getItem("autocomp-user-id");
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
+  const loadAiHistory = async () => {
+    if (!userId) return;
+
+    try {
+      const res = await fetch(`/api/ai/history/${userId}`);
+      if (!res.ok) throw new Error("Failed to load AI history");
+
+      const history = await res.json();
+      const mapped = history.flatMap((item: any) => [
+        {
+          id: `user-${item.id}-prompt`,
+          content: item.content,
+          sender: "user",
+          timestamp: new Date(item.timestamp),
+        },
+        {
+          id: `ai-${item.id}-response`,
+          content: item.response,
+          sender: "ai",
+          name: "AI Assistant",
+          timestamp: new Date(item.timestamp),
+        },
+      ]);
+
+      setAiMessages(mapped);
+    } catch (err) {
+      console.error("AI history error", err);
+    }
+  };
+
+  useEffect(() => {
+    loadAiHistory();
+  }, [userId]);
+
   // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -89,7 +123,9 @@ const Contact = () => {
         );
         setAiMessages(
           processedMessages.filter(
-            (msg: Message) => msg.sender === "ai" || msg.sender === "user"
+            (msg: Message) =>
+              msg.sender === "ai" ||
+              (msg.sender === "user" && !msg.attachments && !ticketId)
           )
         );
       } catch (error) {
@@ -248,8 +284,7 @@ const Contact = () => {
           },
           body: JSON.stringify({
             userId,
-            sender: "user",
-            content: message,
+            prompt: message,
           }),
         });
       } else {
@@ -523,7 +558,7 @@ const Contact = () => {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                       </span>
-                      Support agents online
+                      Support agent online
                     </span>
                   ) : (
                     <span className="flex items-center gap-1">
