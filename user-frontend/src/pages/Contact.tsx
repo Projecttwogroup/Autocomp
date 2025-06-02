@@ -121,13 +121,6 @@ const Contact = () => {
         setSupportMessages(
           processedMessages.filter((msg: Message) => msg.sender !== "ai")
         );
-        setAiMessages(
-          processedMessages.filter(
-            (msg: Message) =>
-              msg.sender === "ai" ||
-              (msg.sender === "user" && !msg.attachments && !ticketId)
-          )
-        );
       } catch (error) {
         console.error("Failed to load chat history:", error);
         toast({
@@ -289,6 +282,7 @@ const Contact = () => {
         });
       } else {
         setAiMessages((prev) => [...prev, newUserMessage]);
+        setMessage("");
 
         // Send message to the AI Assistant API
         const response = await fetch("/api/ai/ask", {
@@ -298,8 +292,7 @@ const Contact = () => {
           },
           body: JSON.stringify({
             userId,
-            sender: "user",
-            content: message,
+            prompt: message,
           }),
         });
 

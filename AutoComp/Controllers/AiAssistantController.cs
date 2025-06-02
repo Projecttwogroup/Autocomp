@@ -32,12 +32,19 @@ namespace AutoComp.Controllers
                 model = "deepseek-chat",
                 messages = new[]
                 {
-        new { role = "system", content = "You are an English-speaking assistant. Only reply in English. Keep answers brief and helpful." },
+        new
+        {
+            role = "system",
+            content = @"You are AutoComp AI Assistant, a friendly and professional technical support assistant for the AutoComp platform.
+Only respond to questions related to technical support, troubleshooting, system usage, or IT issues.
+Do not answer questions that are unrelated to technical topics. Always respond in English and keep responses short and useful."
+        },
         new { role = "user", content = request.Prompt }
     },
                 temperature = 0.7,
                 stream = false
             };
+
 
 
             var json = JsonSerializer.Serialize(payload);
