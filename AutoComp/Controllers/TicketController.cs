@@ -243,5 +243,25 @@ namespace AutoComp.Controllers
             return Ok("Rated successfully.");
         }
 
+        [HttpGet("user/{userId}/stats")]
+        public async Task<IActionResult> GetUserTicketStats(string userId)
+        {
+            var userTickets = await _context.Tickets
+                .Where(t => t.UserId == userId)
+                .ToListAsync();
+
+            var activeCount = userTickets.Count(t => t.Status != "Completed");
+            var completedCount = userTickets.Count(t => t.Status == "Completed");
+            var totalCount = userTickets.Count;
+
+            return Ok(new
+            {
+                active = activeCount,
+                completed = completedCount,
+                total = totalCount
+            });
+        }
+
+
     }
 }

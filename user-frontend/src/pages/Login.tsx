@@ -153,12 +153,6 @@ const Login = () => {
                 </div>
               </div>
               <div className="flex justify-end">
-                <Link
-                  to="/forgot-password"
-                  className="text-sm font-medium text-autocomp-600 hover:underline dark:text-autocomp-400"
-                >
-                  Forgot password?
-                </Link>
               </div>
             </CardContent>
             <CardFooter>

@@ -15,19 +15,8 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3 lg:grid-cols-4">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-autocomp-500">
-                <svg
-                  xmlns="https://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5"
-                >
-                  <path d="M20 7h-3a2 2 0 0 0-2 2v1H9V9a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h3a2 2 0 0 0 2-2v-1h6v1a2 2 0 0 0 2 2h3a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z" />
-                </svg>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg">
+                <img src="/favicon.ico" alt="AutoComp Logo" className="h-8 w-8" />
               </div>
               <span className="font-bold text-lg">AutoComp</span>
             </div>

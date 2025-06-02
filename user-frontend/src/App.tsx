@@ -11,7 +11,6 @@ import { usePreferences } from "@/hooks/use-preferences";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import Layout from "./components/layout/Layout";
 import ScrollToTop from "./components/ui/scroll-to-top";
-import { performanceService } from '@/services/performance-service';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -23,7 +22,6 @@ const CommonIssues = React.lazy(() => import("./pages/CommonIssues"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const Profile = React.lazy(() => import("./pages/Profile"));
 const Login = React.lazy(() => import("./pages/Login"));
-const ForgotPassword = React.lazy(() => import("./pages/ForgotPassword"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 
 // Simple loading fallback
@@ -93,7 +91,6 @@ function App() {
                         }
                       >
                         <Route path="/login" element={<Login />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
                       </Route>
 
                       <Route path="*" element={<NotFound />} />

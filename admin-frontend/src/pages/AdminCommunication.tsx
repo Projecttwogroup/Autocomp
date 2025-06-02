@@ -477,7 +477,7 @@ const AdminCommunication = () => {
                                         <div
                                           className={`text-xs mt-1 text-right ${
                                             message.sender === "admin"
-                                              ? "text-blue-100"
+                                              ? "text-black dark:text-white"
                                               : "text-gray-500 dark:text-gray-400"
                                           }`}
                                         >

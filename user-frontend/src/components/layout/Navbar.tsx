@@ -1,4 +1,4 @@
-import { Bell, Menu, Moon, Sun, User } from "lucide-react";
+import { Bell, Menu, Moon, Sun, User} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -44,7 +44,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
 
     fetchUnseen(); // run immediately on mount
 
-    const intervalId = setInterval(fetchUnseen, 5000); // then every 5s
+    const intervalId = setInterval(fetchUnseen, 3000); // then every 3s
     return () => {
       clearInterval(intervalId);
     }
@@ -152,7 +152,6 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
 
             <span className="sr-only">Notifications</span>
           </Button>
-
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {theme === "light" ? (
               <Moon className="h-5 w-5" />

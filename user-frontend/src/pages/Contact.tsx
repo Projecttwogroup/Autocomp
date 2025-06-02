@@ -704,20 +704,20 @@ const Contact = () => {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex justify-between">
-                  <span>Monday - Friday</span>
+                  <span>Sunday - Thursday</span>
                   <span className="font-medium">8:00 AM - 6:00 PM</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Saturday</span>
-                  <span className="font-medium">9:00 AM - 3:00 PM</span>
+                  <span className="font-medium">10:00 AM - 3:00 PM</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Sunday</span>
+                  <span>Friday</span>
                   <span className="font-medium">Closed</span>
                 </div>
                 <div className="text-sm text-muted-foreground pt-2">
-                  All times are in your local timezone. Emergency support is
-                  available 24/7.
+                  All times are in your local timezone. Support is
+                  available whenever you need it.
                 </div>
               </CardContent>
             </Card>
@@ -730,15 +730,15 @@ const Contact = () => {
                 <div className="flex justify-between">
                   <span>Email</span>
                   <a
-                    href="mailto:support@autocomp.example"
+                    href="mailto:projecttwogroup1@gmail.com"
                     className="font-medium text-autocomp-600 dark:text-autocomp-400 hover:underline"
                   >
-                    support@autocomp.example
+                    projecttwogroup1@gmail.com{" "}
                   </a>
                 </div>
                 <div className="flex justify-between">
                   <span>Phone</span>
-                  <span className="font-medium">+1 (555) 123-4567</span>
+                  <span className="font-medium">+962781234567</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Location</span>

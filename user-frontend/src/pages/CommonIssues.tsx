@@ -43,7 +43,6 @@ const commonIssues = [
       "Reset your network settings: Go to Settings > Network & Internet > Status > Network reset.",
       "Check if other devices can connect to the same network. If not, contact the IT department as there might be a broader network issue.",
     ],
-    helpful: 156,
     tags: ["network", "connectivity", "internet"]
   },
   {
@@ -59,7 +58,6 @@ const commonIssues = [
       "Update or reinstall the printer drivers from the manufacturer's website.",
       "Check if the print spooler service is running: Press Win+R, type 'services.msc', find 'Print Spooler' service, and ensure it's running.",
     ],
-    helpful: 132,
     tags: ["printer", "offline", "printing"]
   },
   {
@@ -76,7 +74,6 @@ const commonIssues = [
       "Ensure you have sufficient storage space in your mailbox.",
       "Contact IT support for specific company email configuration details.",
     ],
-    helpful: 98,
     tags: ["email", "outlook", "configuration"]
   },
   {
@@ -93,7 +90,6 @@ const commonIssues = [
       "Temporarily disable antivirus software during installation.",
       "Clear temporary files: Press Win+R, type '%temp%', and delete unnecessary files.",
     ],
-    helpful: 87,
     tags: ["software", "installation", "updates"]
   },
   {
@@ -109,7 +105,6 @@ const commonIssues = [
       "Do not reuse passwords across multiple accounts.",
       "Consider using a password manager to securely store your passwords.",
     ],
-    helpful: 145,
     tags: ["password", "reset", "account"]
   },
   {
@@ -126,7 +121,6 @@ const commonIssues = [
       "Check if your computer meets the minimum requirements for the software you're using.",
       "Consider requesting a hardware upgrade if your computer is outdated.",
     ],
-    helpful: 174,
     tags: ["performance", "slow", "computer"]
   },
   {
@@ -143,7 +137,6 @@ const commonIssues = [
       "Clear the VPN client cache or reinstall the VPN client software.",
       "Contact IT support for specific VPN configuration settings.",
     ],
-    helpful: 112,
     tags: ["vpn", "remote", "connection"]
   },
   {
@@ -160,7 +153,6 @@ const commonIssues = [
       "Ensure the server hosting the shared drive is online and accessible.",
       "Contact IT support if you need permission changes or if the issue persists.",
     ],
-    helpful: 89,
     tags: ["shared drive", "network", "file sharing"]
   },
   {
@@ -177,7 +169,6 @@ const commonIssues = [
       "Try a different web browser if issues persist.",
       "Ensure you have sufficient bandwidth for screen sharing.",
     ],
-    helpful: 76,
     tags: ["meetings", "screen sharing", "video conference"]
   },
   {
@@ -194,7 +185,6 @@ const commonIssues = [
       "On mobile devices, remove and re-add the account.",
       "Check if there are any sync restrictions set by your IT administrator.",
     ],
-    helpful: 93,
     tags: ["outlook", "calendar", "synchronization"]
   },
   {
@@ -211,7 +201,6 @@ const commonIssues = [
       "Try using headphones instead of speakers to eliminate echo.",
       "Restart the meeting application or your computer.",
     ],
-    helpful: 118,
     tags: ["audio", "microphone", "meetings"]
   },
   {
@@ -228,7 +217,6 @@ const commonIssues = [
       "Try installing updates in Safe Mode if normal mode fails.",
       "Contact IT support if specific updates consistently fail.",
     ],
-    helpful: 84,
     tags: ["updates", "windows", "software"]
   },
 ];
@@ -265,13 +253,6 @@ const CommonIssues = () => {
     toast({
       title: "Copied to Clipboard",
       description: "Solution steps have been copied to your clipboard.",
-    });
-  };
-
-  const handleMarkAsHelpful = (id: string) => {
-    toast({
-      title: "Thank You",
-      description: "You've marked this solution as helpful.",
     });
   };
 
@@ -390,30 +371,6 @@ const CommonIssues = () => {
                             {tag}
                           </Badge>
                         ))}
-                      </div>
-                      <div className="flex flex-wrap justify-between items-center pt-2 border-t">
-                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                          <ThumbsUp className="h-4 w-4" />
-                          <span>{issue.helpful} people found this helpful</span>
-                        </div>
-                        <div className="flex gap-3 mt-3 sm:mt-0">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => handleCopyToClipboard(issue.solution)}
-                          >
-                            <Clipboard className="mr-2 h-4 w-4" />
-                            Copy Steps
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            className="bg-autocomp-500 hover:bg-autocomp-600"
-                            onClick={() => handleMarkAsHelpful(issue.id)}
-                          >
-                            <ThumbsUp className="mr-2 h-4 w-4" />
-                            Mark as Helpful
-                          </Button>
-                        </div>
                       </div>
                     </div>
                   </AccordionContent>

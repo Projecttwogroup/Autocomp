@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,8 @@ import AdminSettings from "./pages/AdminSettings";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminCommunication from "./pages/AdminCommunication";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
+import RequireAdminAuth from "@/components/auth/RequireAdminAuth";
+import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
@@ -24,14 +25,58 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            
+
             {/* Admin Routes */}
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/admin/requests" element={<AdminRequests />} />
-            <Route path="/admin/notifications" element={<AdminNotifications />} />
-            <Route path="/admin/communication" element={<AdminCommunication />} />
-            <Route path="/admin/settings" element={<AdminSettings />} />
-            
+            <Route
+              path="/admin"
+              element={
+                <RequireAdminAuth>
+                  <Admin />
+                </RequireAdminAuth>
+              }
+            />
+            <Route
+              path="/admin/requests"
+              element={
+                <RequireAdminAuth>
+                  <AdminRequests />
+                </RequireAdminAuth>
+              }
+            />
+            <Route
+              path="/admin/notifications"
+              element={
+                <RequireAdminAuth>
+                  <AdminNotifications />
+                </RequireAdminAuth>
+              }
+            />
+            <Route
+              path="/admin/communication"
+              element={
+                <RequireAdminAuth>
+                  <AdminCommunication />
+                </RequireAdminAuth>
+              }
+            />
+            <Route
+              path="/admin/settings"
+              element={
+                <RequireAdminAuth>
+                  <AdminSettings />
+                </RequireAdminAuth>
+              }
+            />
+
+            <Route
+              path="/login"
+              element={
+                <RedirectIfAuthenticated>
+                  <Index />
+                </RedirectIfAuthenticated>
+              }
+            />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -40,5 +85,19 @@ const App = () => (
     </ThemeProvider>
   </QueryClientProvider>
 );
+
+const RedirectIfAuthenticated = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
+  const isAuthenticated = localStorage.getItem("autocomp-admin-auth");
+
+  if (isAuthenticated) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 export default App;
