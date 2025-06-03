@@ -46,6 +46,18 @@ const Contact = () => {
   const userId = localStorage.getItem("autocomp-user-id");
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
+useEffect(() => {
+  requestAnimationFrame(() => {
+    if (messagesEndRef.current) {
+      const chatContainer = messagesEndRef.current.parentElement;
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }
+  });
+}, [activeTab]);
+
+
   const loadAiHistory = async () => {
     if (!userId) return;
 
@@ -197,45 +209,6 @@ const Contact = () => {
     };
   }, [toast]);
 
-  // Initialize messages based on whether a ticket ID is provided
-  useEffect(() => {
-    if (ticketId) {
-      setSupportMessages((prev) => [
-        {
-          id: "system-1",
-          content: `You're now chatting about request ${ticketId}. A support agent will join shortly.`,
-          sender: "agent",
-          timestamp: new Date(),
-          name: "System",
-        },
-        ...prev,
-      ]);
-    } else if (supportMessages.length === 0) {
-      setSupportMessages([
-        {
-          id: "welcome-1",
-          content: "Welcome to AutoComp Support! How can I help you today?",
-          sender: "agent",
-          timestamp: new Date(),
-          name: "Support Team",
-        },
-      ]);
-    }
-
-    if (aiMessages.length === 0) {
-      setAiMessages([
-        {
-          id: "ai-welcome-1",
-          content:
-            "Hello! I'm your AutoComp AI assistant. I can help you with common technical issues, guide you through troubleshooting steps, or connect you with a human agent if needed. How can I assist you today?",
-          sender: "ai",
-          timestamp: new Date(),
-          name: "AI Assistant",
-        },
-      ]);
-    }
-  }, [ticketId]);
-
   useEffect(() => {
     const container = messagesEndRef.current?.closest(".overflow-y-auto");
     if (container) {
@@ -277,7 +250,8 @@ const Contact = () => {
           },
           body: JSON.stringify({
             userId,
-            prompt: message,
+            sender: "user",
+            content: message,
           }),
         });
       } else {
@@ -716,8 +690,8 @@ const Contact = () => {
                   <span className="font-medium">Closed</span>
                 </div>
                 <div className="text-sm text-muted-foreground pt-2">
-                  All times are in your local timezone. Support is
-                  available whenever you need it.
+                  All times are in your local timezone. Support is available
+                  whenever you need it.
                 </div>
               </CardContent>
             </Card>

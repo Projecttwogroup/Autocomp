@@ -337,7 +337,7 @@ const AdminCommunication = () => {
                             {conversation.lastMessage?.trim()?.length
                               ? conversation.lastMessage.trim()
                               : conversation.lastAttachmentUrl
-                              ? "[Image]"
+                              ? "[Attachment]"
                               : ""}
                           </p>
                         </div>

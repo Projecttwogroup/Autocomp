@@ -83,6 +83,7 @@ namespace AutoComp.Controllers
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
 
+            // Save attachments
             if (attachments != null && attachments.Count > 0)
             {
                 foreach (var file in attachments)
@@ -114,8 +115,42 @@ namespace AutoComp.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            // Send new request confirmation email
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == fields.UserId);
+            Console.WriteLine($"[DEBUG] user = {user?.Email}, receive = {user?.ReceiveStatusEmails}");
+            if (user != null && user.ReceiveStatusEmails)
+            {
+                var template = await _context.EmailTemplates.FirstOrDefaultAsync(t => t.Type == "newRequest");
+                if (template != null)
+                {
+                    var emailBody = template.Body
+                        .Replace("[User Name]", user.Name)
+                        .Replace("[Request ID]", ticket.Id)
+                        .Replace("[Department]", ticket.Department)
+                        .Replace("[Description]", ticket.Description)
+                        .Replace("[Preferred Time]", ticket.PreferredDate?.ToString("F") ?? "Not specified")
+                        .Replace("[Status]", ticket.Status)
+                        .Replace("[Technician]", "Unassigned");
+
+                    var subject = template.Subject.Replace("[Request ID]", ticket.Id);
+
+                    try
+                    {
+                        Console.WriteLine($"Sending new request email to: {user.Email}");
+                        await EmailService.SendAsync(user.Email, subject, emailBody);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed to send email: " + ex.Message);
+                    }
+
+                }
+            }
+
             return Ok(new { ticket.Id });
         }
+
 
 
         [HttpDelete("{userId}/{ticketId}")]
@@ -193,7 +228,7 @@ namespace AutoComp.Controllers
             if (newStatus == "Received")
                 ticket.Technician = null;
 
-            // Sync CompletedRequests if technician is set
+            // Update technician CompletedRequests
             if (!string.IsNullOrEmpty(technicianName))
             {
                 var technician = await _context.Technicians.FirstOrDefaultAsync(t => t.Name == technicianName);
@@ -208,10 +243,33 @@ namespace AutoComp.Controllers
             }
 
             await _context.SaveChangesAsync();
+
+            // Email logic
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == ticket.UserId);
+            if (user != null && user.ReceiveStatusEmails)
+            {
+                string templateType = newStatus == "Completed" ? "requestCompleted" : "statusUpdate";
+                var template = await _context.EmailTemplates.FirstOrDefaultAsync(t => t.Type == templateType);
+
+                if (template != null)
+                {
+                    var emailBody = template.Body
+                        .Replace("[User Name]", user.Name)
+                        .Replace("[Request ID]", ticket.Id)
+                        .Replace("[Department]", ticket.Department)
+                        .Replace("[Description]", ticket.Description)
+                        .Replace("[Preferred Time]", ticket.PreferredDate?.ToString("F") ?? "Not specified")
+                        .Replace("[Status]", ticket.Status)
+                        .Replace("[Technician]", ticket.Technician ?? "Unassigned");
+
+                    var subject = template.Subject.Replace("[Request ID]", ticket.Id);
+
+                    await EmailService.SendAsync(user.Email, subject, emailBody);
+                }
+            }
+
             return Ok("Status updated.");
         }
-
-
 
 
         [HttpPut("admin/assign-technician/{ticketId}")]

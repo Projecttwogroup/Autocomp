@@ -46,7 +46,8 @@ namespace AutoComp.Controllers
             {
                 user.Id,
                 user.Name,
-                user.Email
+                user.Email,
+                user.ReceiveStatusEmails
             });
         }
 
@@ -90,6 +91,19 @@ namespace AutoComp.Controllers
             }
 
             return Ok(matchedUsers);
+        }
+
+        [HttpPut("update-preferences/{userId}")]
+        public async Task<IActionResult> UpdateNotificationPreference(string userId, [FromBody] bool receiveStatusEmails)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return NotFound("User not found.");
+
+            user.ReceiveStatusEmails = receiveStatusEmails;
+            await _context.SaveChangesAsync();
+
+            return Ok("Notification preference updated.");
         }
 
     }

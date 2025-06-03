@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,22 +14,14 @@ import ScrollToTop from "./components/ui/scroll-to-top";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 
-// Simplified lazy imports without redundant performance tracking
-const HomePage = React.lazy(() => import("./pages/HomePage"));
-const Tickets = React.lazy(() => import("./pages/Tickets"));
-const SubmitRequest = React.lazy(() => import("./pages/SubmitRequest"));
-const CommonIssues = React.lazy(() => import("./pages/CommonIssues"));
-const Contact = React.lazy(() => import("./pages/Contact"));
-const Profile = React.lazy(() => import("./pages/Profile"));
-const Login = React.lazy(() => import("./pages/Login"));
-const NotFound = React.lazy(() => import("./pages/NotFound"));
-
-// Simple loading fallback
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-  </div>
-);
+import HomePage from "./pages/HomePage";
+import Tickets from "./pages/Tickets";
+import SubmitRequest from "./pages/SubmitRequest";
+import CommonIssues from "./pages/CommonIssues";
+import Contact from "./pages/Contact";
+import Profile from "./pages/Profile";
+import Login from "./pages/Login";
+import NotFound from "./pages/NotFound";
 
 const queryClient = createQueryClient();
 
@@ -65,37 +57,35 @@ function App() {
                     richColors 
                     closeButton
                   />
-                  <Suspense fallback={<PageLoader />}>
-                    <Routes>
-                      <Route
-                        element={
-                          <RequireAuth>
-                            <Layout />
-                          </RequireAuth>
-                        }
-                      >
-                        <Route path="/" element={<HomePage />} />
-                        <Route path="/tickets" element={<Tickets />} />
-                        <Route path="/submit" element={<SubmitRequest />} />
-                        <Route path="/issues" element={<CommonIssues />} />
-                        <Route path="/contact" element={<Contact />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/settings" element={<Profile />} />
-                      </Route>
+                  <Routes>
+                    <Route
+                      element={
+                        <RequireAuth>
+                          <Layout />
+                        </RequireAuth>
+                      }
+                    >
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/tickets" element={<Tickets />} />
+                      <Route path="/submit" element={<SubmitRequest />} />
+                      <Route path="/issues" element={<CommonIssues />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/settings" element={<Profile />} />
+                    </Route>
 
-                      <Route
-                        element={
-                          <RequireUnauth>
-                            <Outlet />
-                          </RequireUnauth>
-                        }
-                      >
-                        <Route path="/login" element={<Login />} />
-                      </Route>
+                    <Route
+                      element={
+                        <RequireUnauth>
+                          <Outlet />
+                        </RequireUnauth>
+                      }
+                    >
+                      <Route path="/login" element={<Login />} />
+                    </Route>
 
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </Suspense>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
                 </BrowserRouter>
               </TooltipProvider>
             </ChatProvider>
@@ -108,12 +98,8 @@ function App() {
 
 // Auth route guards
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated } = useAuth();
   
-  if (loading) {
-    return <div className="min-h-screen bg-background" />;
-  }
-
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -122,11 +108,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function RequireUnauth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return <div className="min-h-screen bg-background" />;
-  }
+  const { isAuthenticated } = useAuth();
 
   if (isAuthenticated) {
     return <Navigate to="/" replace />;

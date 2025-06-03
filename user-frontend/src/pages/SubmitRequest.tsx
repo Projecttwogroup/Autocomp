@@ -72,11 +72,12 @@ const SubmitRequest = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const navigate = useNavigate();
-  const formSchema = z.object({
+const formSchema = z
+  .object({
     description: z
       .string()
-      .min(20, {
-        message: "Description must be at least 20 characters.",
+      .min(10, {
+        message: "Description must be at least 10 characters.",
       })
       .max(1000, {
         message: "Description must not exceed 1000 characters.",
@@ -85,12 +86,27 @@ const SubmitRequest = () => {
     location: z.string().min(3, {
       message: "Location must be at least 3 characters.",
     }),
-    contactNumber: z.string().min(10, {
-      message: "Please enter a valid phone number.",
-    }),
-    preferredDate: z.string().min(1, {
-      message: "Please select a preferred date.",
-    }),
+    contactNumber: z
+      .string()
+      .min(10, {
+        message: "Please enter a valid phone number with at least 10 digits.",
+      })
+      .refine((val) => /^\d+$/.test(val), {
+        message: "Phone number can only contain digits.",
+      }),
+    preferredDate: z
+      .string()
+      .min(1, {
+        message: "Please select a preferred date.",
+      })
+      .refine((val) => {
+        const inputDate = new Date(val);
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return inputDate >= new Date(tomorrow.toDateString());
+      }, {
+        message: "Preferred date must be at least tomorrow.",
+      }),
     preferredTimeStart: z.string().min(1, {
       message: "Please select a start time.",
     }),
@@ -103,7 +119,14 @@ const SubmitRequest = () => {
     officeHoursEnd: z.string().min(1, {
       message: "Please provide your office hours end time.",
     }),
-  });
+  })
+  .refine(
+    (data) => data.preferredTimeEnd > data.preferredTimeStart,
+    {
+      message: "Available Until must be after Available From.",
+      path: ["preferredTimeEnd"],
+    }
+  );
 
   const departments = [
     { id: "Hardware Support", name: "Hardware Support" },
@@ -117,7 +140,7 @@ const SubmitRequest = () => {
 
   const defaultFormValues = {
     description: "",
-    department: "hardware",
+    department: "unknown",
     location: "",
     contactNumber: "",
     preferredDate: "",
@@ -219,15 +242,7 @@ const SubmitRequest = () => {
       }
 
       // Check file type
-      const validTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/gif",
-        "application/pdf",
-        "text/plain",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      ];
+      const validTypes = ["image/jpeg", "image/png", "image/gif"];
       if (!validTypes.includes(file.type)) {
         newErrors.push(`File ${file.name} has an unsupported file format.`);
         return;
@@ -439,7 +454,19 @@ const SubmitRequest = () => {
                       <FormItem>
                         <FormLabel>Contact Number</FormLabel>
                         <FormControl>
-                          <Input placeholder="Your phone number" {...field} />
+                          <Input
+                            placeholder="Your phone number"
+                            type="tel"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            onKeyPress={(e) => {
+                              const isNumber = /^[0-9]$/.test(e.key);
+                              if (!isNumber) {
+                                e.preventDefault();
+                              }
+                            }}
+                            {...field}
+                          />
                         </FormControl>
                         <FormDescription>How we can reach you</FormDescription>
                         <FormMessage />
@@ -497,7 +524,15 @@ const SubmitRequest = () => {
                       <FormItem>
                         <FormLabel>Preferred Date</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input
+                            type="date"
+                            min={
+                              new Date(Date.now() + 86400000)
+                                .toISOString()
+                                .split("T")[0]
+                            }
+                            {...field}
+                          />
                         </FormControl>
                         <FormDescription>
                           When would you like the technician to visit
@@ -557,8 +592,7 @@ const SubmitRequest = () => {
             </CardContent>
 
             <CardFooter className="border-t p-6 flex flex-col gap-4 sm:flex-row sm:justify-between">
-              <div className="flex items-center space-x-2">
-              </div>
+              <div className="flex items-center space-x-2"></div>
               <div className="flex gap-4 w-full sm:w-auto">
                 <Button
                   variant="outline"

@@ -5,6 +5,8 @@ using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 // 1. Database context
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

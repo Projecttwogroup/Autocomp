@@ -13,6 +13,9 @@ public class User
 
     public string Role { get; set; } = "User";
 
+    public bool ReceiveStatusEmails { get; set; } = true;
+
+
     [JsonIgnore]
     public List<Notification> Notifications { get; set; } = new();
 

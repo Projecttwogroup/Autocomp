@@ -14,7 +14,7 @@ namespace AutoComp.Data
         public DbSet<ChatAttachment> ChatAttachments { get; set; }
         public DbSet<AiChatMessage> AiChatMessages { get; set; }
         public DbSet<Technician> Technicians { get; set; }
-
+        public DbSet<EmailTemplate> EmailTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

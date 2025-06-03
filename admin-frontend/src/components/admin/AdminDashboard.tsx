@@ -7,6 +7,7 @@ import RecentRequests from "./dashboard/RecentRequests";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import RequestsStatusChart from "./dashboard/RequestsStatusChart";
+import { Button } from "../ui/button";
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState([
@@ -141,7 +142,6 @@ const AdminDashboard = () => {
           <CardContent className="space-y-4">
             {overview.technicians.map((t, i) => {
               const rate = t.performance;
-
               return (
                 <div key={i} className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -152,6 +152,20 @@ const AdminDashboard = () => {
                 </div>
               );
             })}
+
+            <div className="mt-10 pt-4">
+              <Button
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                onClick={() =>
+                  window.open(
+                    "https://localhost:7181/api/dashboard/admin/technicians-report",
+                    "_blank"
+                  )
+                }
+              >
+                View Full PDF Report
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

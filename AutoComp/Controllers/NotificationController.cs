@@ -129,6 +129,38 @@ namespace AutoComp.Controllers
             return Ok(notifications);
         }
 
+        [HttpPost("send-status-update/{ticketId}")]
+        public async Task<IActionResult> SendStatusUpdate(string ticketId)
+        {
+            var ticket = await _context.Tickets
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Id == ticketId);
+
+            if (ticket == null)
+                return NotFound("Ticket not found.");
+
+            if (!ticket.User.ReceiveStatusEmails)
+                return Ok("User opted out of status emails.");
+
+            var template = await _context.EmailTemplates.FirstOrDefaultAsync(t => t.Type == "statusUpdate");
+            if (template == null)
+                return BadRequest("Template not found.");
+
+            var body = template.Body
+                .Replace("[User Name]", ticket.User.Name)
+                .Replace("[Request ID]", ticket.Id)
+                .Replace("[Department]", ticket.Department)
+                .Replace("[Description]", ticket.Description)
+                .Replace("[Preferred Time]", ticket.PreferredDate?.ToString("f") ?? "Not specified")
+                .Replace("[Status]", ticket.Status)
+                .Replace("[Technician]", ticket.Technician ?? "Unassigned");
+
+            var subject = template.Subject.Replace("[Request ID]", ticket.Id);
+
+            await EmailService.SendAsync(ticket.User.Email, subject, body);
+            return Ok("Email sent.");
+
+        }
 
     }
 }

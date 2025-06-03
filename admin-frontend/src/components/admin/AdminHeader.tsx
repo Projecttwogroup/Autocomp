@@ -37,38 +37,9 @@ const AdminHeader = () => {
   return (
     <header className="bg-card shadow-sm dark:shadow-md dark:shadow-black/10 h-16 flex items-center px-4 md:px-6">
       <div className="flex-1 flex items-center">
-        {/* Removed search bar */}
+        {}
       </div>
       <div className="flex items-center space-x-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="relative p-1 text-foreground">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="max-h-96 overflow-auto">
-              {[1, 2, 3].map((i) => (
-                <DropdownMenuItem key={i} className="py-2 cursor-pointer">
-                  <div>
-                    <p className="font-medium">New Request Received</p>
-                    <p className="text-sm text-muted-foreground">
-                      John Doe submitted a new support request #REQ-{1000 + i}
-                    </p>
-                    <p className="text-xs text-muted-foreground/70 mt-1">
-                      5 mins ago
-                    </p>
-                  </div>
-                </DropdownMenuItem>
-              ))}
-            </div>
-            {/* Removed "View all" button and separator */}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center space-x-2">
