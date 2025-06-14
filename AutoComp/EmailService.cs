@@ -12,10 +12,12 @@ namespace AutoComp
             message.To.Add(MailboxAddress.Parse(to));
             message.Subject = subject;
             message.Body = new TextPart("plain") { Text = body };
-
             using var smtp = new SmtpClient();
-            await smtp.ConnectAsync("smtp.gmail.com", 587, false);
+            smtp.ServerCertificateValidationCallback = (s, c, h, e) => true;
+
+            await smtp.ConnectAsync("smtp.gmail.com", 465, true); // Use SSL
             await smtp.AuthenticateAsync("projecttwogroup1@gmail.com", "npcs gpaq rybk vfvq");
+
             await smtp.SendAsync(message);
             await smtp.DisconnectAsync(true);
         }

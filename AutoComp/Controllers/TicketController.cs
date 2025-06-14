@@ -295,7 +295,11 @@ namespace AutoComp.Controllers
 
             ticket.Rating = input.Rating;
             ticket.Feedback = input.Feedback;
-            ticket.CompletedAt ??= DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+            if (ticket.PreferredDate == null || now > ticket.PreferredDate)
+            {
+                ticket.CompletedAt ??= now;
+            }
 
             await _context.SaveChangesAsync();
             return Ok("Rated successfully.");

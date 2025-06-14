@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
-import { Bot, Paperclip, Send } from "lucide-react";
+import { Bot, Paperclip, Send, HeadsetIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import * as signalR from "@microsoft/signalr";
@@ -400,21 +400,16 @@ useEffect(() => {
             {msg.sender !== "user" && msg.name && (
               <div className="flex items-center gap-2">
                 <Avatar className="h-6 w-6">
-                  <AvatarImage
-                    src={
-                      msg.sender === "agent"
-                        ? "https://i.pravatar.cc/100?img=5"
-                        : undefined
-                    }
-                    alt={msg.name}
-                  />
                   <AvatarFallback
-                    className={
-                      msg.sender === "ai" ? "bg-autocomp-600" : undefined
-                    }
+                    className={cn({
+                      "bg-autocomp-600": msg.sender === "ai",
+                      "bg-blue-600": msg.sender === "agent"
+                    })}
                   >
                     {msg.sender === "ai" ? (
-                      <Bot className="h-4 w-4" />
+                      <Bot className="h-4 w-4 text-white" />
+                    ) : msg.sender === "agent" ? (
+                      <HeadsetIcon className="h-4 w-4 text-white" />
                     ) : (
                       msg.name.charAt(0)
                     )}
